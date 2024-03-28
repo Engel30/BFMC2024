@@ -279,15 +279,7 @@ int main(void)
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-
-			dataRX.linear_speed_ref_m_s = 0.60;
-			dataRX.curvature_radius_ref_m = 0.62;// 1.00; //0.62;
-			dataRX.enable = 1;
-			HardwareEnable = 1;
-			//BL_set_PWM(NEUTRAL_PWM);
-			//printf("%f, %d\r\n", angolo_sterzo, cnt_sterzo);
-			//servo_motor(angolo_sterzo);
-			//servo_motor(-44);
+			HardwareEnable=1;
 			break;
 		}
 
