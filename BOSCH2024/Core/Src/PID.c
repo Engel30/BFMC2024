@@ -42,7 +42,7 @@ float PID_controller(PID* p , float y, float r){
 	//printf("errore: %.2f, y: %.2f, r: %.2f, u: %.2f \r\n", e, y, r, u);
 
 	if(p->offset == 0){
-		printf("%f\r\n", u);
+		//printf("%f\r\n", u);
 	}
 	return u;
 }

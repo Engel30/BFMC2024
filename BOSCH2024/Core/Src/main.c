@@ -122,6 +122,13 @@ float duty;
 //Inclinazione per il PID in discesa
 float x_acceleration = 0;
 
+//Filtro per la velocità
+#define MAX_RPM_VALUES 10
+float tempRPM = 0;
+int PtrRPM = 0;
+float MeanRPM = 0;
+float ArrayRPM[MAX_RPM_VALUES];
+
 //Serial input buffer
 uint8_t RxBuf[RxBuf_SIZE];
 uint8_t msg[45] = { "\0" };
@@ -299,7 +306,23 @@ int main(void)
 
 				vehicleState.delta_angle_deg = (vehicleState.delta_count * 360) / ((double) (ENCODER_PPR * ENCODER_COUNTING_MODE * GEARBOX_RATIO));
 				vehicleState.motor_speed_deg_sec = vehicleState.delta_angle_deg / ENCODER_SAMPLING_TIME;
-				vehicleState.motor_speed_RPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
+				tempRPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
+				//vehicleState.motor_speed_RPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
+
+				//Filtraggio della velocità
+				ArrayRPM[PtrRPM] = tempRPM;
+				MeanRPM = 0;
+				for(int i = 0; i < MAX_RPM_VALUES; i++){
+					MeanRPM += ArrayRPM[i];
+				}
+				MeanRPM /= MAX_RPM_VALUES;
+
+				if(PtrRPM == MAX_RPM_VALUES-1)
+					PtrRPM = 0;
+				else
+					PtrRPM++;
+				vehicleState.motor_speed_RPM = MeanRPM;
+				printf("%f;%f\r\n", vehicleState.motor_speed_RPM, tempRPM);
 
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
@@ -368,11 +391,8 @@ int main(void)
 				}
 			}
 		} else {
-			if(flag_button == 0){
-				BL_set_PWM(NEUTRAL_PWM);
-				servo_motor(0);
-			}
-
+			BL_set_PWM(NEUTRAL_PWM);
+			servo_motor(0);
 		}
 
 	}
