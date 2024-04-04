@@ -95,7 +95,7 @@ DMA_HandleTypeDef hdma_usart6_rx;
 /* USER CODE BEGIN PV */
 
 serialDataRX dataRX;
-serialDataRX dataTX;
+serialDataTX dataTX;
 vehicleData vehicleState;
 
 //PID
@@ -155,7 +155,7 @@ static void MX_TIM2_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
-void postTelemetry(float, float, float);
+void TransmitTelemetry();
 void ProceduraCalibrazione();
 /* USER CODE END PFP */
 
@@ -307,7 +307,6 @@ int main(void)
 				vehicleState.delta_angle_deg = (vehicleState.delta_count * 360) / ((double) (ENCODER_PPR * ENCODER_COUNTING_MODE * GEARBOX_RATIO));
 				vehicleState.motor_speed_deg_sec = vehicleState.delta_angle_deg / ENCODER_SAMPLING_TIME;
 				tempRPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
-				//vehicleState.motor_speed_RPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
 
 				//Filtraggio della velocità
 				ArrayRPM[PtrRPM] = tempRPM;
@@ -347,7 +346,6 @@ int main(void)
 				else
 					BL_set_PWM(u_trazione);
 
-				//printf("%f;%f\r\n", vehicleState.motor_speed_ref_RPM, vehicleState.motor_speed_RPM);
 				//-------------------------------------------------------------
 
 				//STEERING control
@@ -389,6 +387,8 @@ int main(void)
 
 					servo_motor(u_sterzo);
 				}
+				dataTX.current_servo_angle_deg = u_sterzo;
+				TransmitTelemetry();
 			}
 		} else {
 			BL_set_PWM(NEUTRAL_PWM);
@@ -866,31 +866,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/*
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
-	HAL_UART_Receive_IT(&huart6, char_in, 1);
-
-	if (char_in != '\n') {
-		msg[msg_len] = char_in;
-		msg_len++;
-	} else {
-
-		float floatArray[MAX_VALUES];
-
-		parseCSV(msg, floatArray);
-		dataRX.enable = floatArray[0];
-		dataRX.linear_speed_ref_m_s = floatArray[1];
-		dataRX.curvature_radius_ref_m = floatArray[2];
-
-		//Reset the buffer
-		memset(msg, '\0', sizeof(msg));
-		//Reset the counter
-		msg_len = 0;
-
-	}
+void TransmitTelemetry(){
+	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
+	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
+	printf("%f; %f; %f", dataTX.current_servo_angle_deg, dataTX.current_speed_rpm, dataTX.current_yaw_rate_deg_sec);
 }
-*/
 
 //Timer11 for temporization
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -922,22 +903,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
-	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
+	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF);
 	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF);
 	return ch;
 }
-/*
-//BLUE user button
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_13) {
-		if (HardwareEnable == 0) {
-			HardwareEnable = 1;
-		} else {
-			HardwareEnable = 0;
-		}
-	}
-}
-*/
 
 //-------------------------------------------------------------
 //BLUE user button
