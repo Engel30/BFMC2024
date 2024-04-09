@@ -395,8 +395,10 @@ int main(void)
 				TransmitTelemetry();
 			}
 		} else {
-			BL_set_PWM(NEUTRAL_PWM);
-			servo_motor(0);
+			if(flag_button != -1){
+				BL_set_PWM(NEUTRAL_PWM);
+				servo_motor(0);
+			}
 		}
 
 	}
@@ -914,7 +916,6 @@ int __io_putchar(int ch) {
 
 //-------------------------------------------------------------
 //BLUE user button
-/*
 //CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13) {
@@ -943,8 +944,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		}
 	}
 }
-*/
+
 //CALIBRAZIONE CON PULSANTE
+/*
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
@@ -976,10 +978,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		}
 	}
 }
-
+*/
 //-------------------------------------------------------------
 //CALIBRAZIONE TEMPORIZZATA
-/*
 void ProceduraCalibrazione(){
 	if(counter_cal_ESC < 5){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -1013,9 +1014,9 @@ void ProceduraCalibrazione(){
 		flag_button = 0;
 	}
 }
-*/
-//CALIBRAZIONE CON PULSANTE
 
+//CALIBRAZIONE CON PULSANTE
+/*
 void ProceduraCalibrazione(){
 	printf("%f; %d\r\n", duty, flag_cal);
 	switch(flag_cal){
@@ -1041,7 +1042,7 @@ void ProceduraCalibrazione(){
 		break;
 	}
 }
-
+*/
 /* USER CODE END 4 */
 
 /**
