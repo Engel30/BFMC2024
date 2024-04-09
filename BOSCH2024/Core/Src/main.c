@@ -118,6 +118,7 @@ int max_flag_button;
 //Variabili per calibrazione ESC
 int counter_cal_ESC = 0;
 float duty;
+int flag_cal = 0;
 
 //Inclinazione per il PID in discesa
 float x_acceleration = 0;
@@ -906,14 +907,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
-	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF);
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
 	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF);
 	return ch;
 }
 
 //-------------------------------------------------------------
 //BLUE user button
-//CALIBRAZIONE TEMPoRIZZATA
+/*
+//CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
@@ -941,9 +943,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		}
 	}
 }
-
+*/
 //CALIBRAZIONE CON PULSANTE
-/*
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
@@ -975,9 +976,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		}
 	}
 }
-*/
+
 //-------------------------------------------------------------
 //CALIBRAZIONE TEMPORIZZATA
+/*
 void ProceduraCalibrazione(){
 	if(counter_cal_ESC < 5){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -1011,10 +1013,11 @@ void ProceduraCalibrazione(){
 		flag_button = 0;
 	}
 }
-
+*/
 //CALIBRAZIONE CON PULSANTE
-/*
+
 void ProceduraCalibrazione(){
+	printf("%f; %d\r\n", duty, flag_cal);
 	switch(flag_cal){
 	case 0:
 		if(!(counter_cal_ESC % 15)){
@@ -1027,9 +1030,9 @@ void ProceduraCalibrazione(){
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 		break;
 	case 2:
-		duty = MIN_PWM;
+		duty = MAX_PWM;
 		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 		break;
 	case 3:
 		duty = MIN_PWM;
@@ -1038,7 +1041,7 @@ void ProceduraCalibrazione(){
 		break;
 	}
 }
-*/
+
 /* USER CODE END 4 */
 
 /**
