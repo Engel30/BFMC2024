@@ -290,6 +290,9 @@ int main(void)
 			break;
 		}
 
+		if(flag_button != -1)
+			flag_cal = 0;
+
 		//-------------------------------------------------------------
 		//Controllo
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
@@ -910,6 +913,7 @@ int __io_putchar(int ch) {
 
 //-------------------------------------------------------------
 //BLUE user button
+//CALIBRAZIONE TEMPoRIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
@@ -938,8 +942,42 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	}
 }
 
+//CALIBRAZIONE CON PULSANTE
+/*
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if (GPIO_Pin == GPIO_PIN_13) {
+		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
+			buttonPressStartTime = cnt_10ms_button;
+
+		} else { // Button released
+			buttonPressEndTime = cnt_10ms_button;
+
+			//Verifico quantotemp ho tenuto premuto il tasto
+			pressDuration = buttonPressEndTime - buttonPressStartTime;
+			if (pressDuration < SHORT_PRESS_THRESHOLD){
+				//CALIBRAZIONE
+				if(flag_button == -1){
+					if(flag_cal >= 0 && flag_cal < 3)
+						flag_cal++;
+					else
+						flag_button = 0;
+				} else { //PRESSIONE NORMALE
+					if(flag_button >= 0 && flag_button < max_flag_button)
+						flag_button++;
+					else
+						flag_button = 0;
+				}
+
+			} else if (pressDuration >= LONG_PRESS_THRESHOLD){
+				flag_button = -1;
+				counter_cal_ESC = 0;
+			}
+		}
+	}
+}
+*/
 //-------------------------------------------------------------
-//CALIBRAZIONE
+//CALIBRAZIONE TEMPORIZZATA
 void ProceduraCalibrazione(){
 	if(counter_cal_ESC < 5){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -974,6 +1012,33 @@ void ProceduraCalibrazione(){
 	}
 }
 
+//CALIBRAZIONE CON PULSANTE
+/*
+void ProceduraCalibrazione(){
+	switch(flag_cal){
+	case 0:
+		if(!(counter_cal_ESC % 15)){
+			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		}
+		break;
+	case 1:
+		duty = NEUTRAL_PWM;
+		BL_set_PWM(duty);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		break;
+	case 2:
+		duty = MIN_PWM;
+		BL_set_PWM(duty);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		break;
+	case 3:
+		duty = MIN_PWM;
+		BL_set_PWM(duty);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		break;
+	}
+}
+*/
 /* USER CODE END 4 */
 
 /**
