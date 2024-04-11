@@ -332,7 +332,7 @@ int main(void)
 				else
 					PtrRPM++;
 				vehicleState.motor_speed_RPM = MeanRPM;
-				printf("%f;%f\r\n", vehicleState.motor_speed_RPM, tempRPM);
+				//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, tempRPM);
 
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
@@ -340,9 +340,10 @@ int main(void)
 				//Verifica l'inclinazine della macchina per la rampa
 				bno055_vector_t u = bno055_getVectorGravity();
 				x_acceleration = u.x;
+				//printf("%f;%f\r\n", x_acceleration, 0);
 
 				//Decido quale PID usare in base al verso del moto
-				if(x_acceleration < -0.6)
+				if(x_acceleration < -1.2)
 					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 				else{
 					if(vehicleState.motor_speed_ref_RPM >= 0)
