@@ -30,7 +30,14 @@ float PID_controller(PID* p , float y, float r){
 
 	p->e_old = e;
 
+/*
 	u = Pterm + newIterm + Dterm + p->offset;
+
+	if (u > 2*p->u_max || u < 2*p->u_min){
+		p->Iterm = 0;
+	}
+*/
+
 	if(u > p->u_max){
 		u = p->u_max;
 	} else if(u < p->u_min){
@@ -38,6 +45,7 @@ float PID_controller(PID* p , float y, float r){
 	} else {
 		p->Iterm = newIterm;
 	}
+
 
 	//printf("errore: %.2f, y: %.2f, r: %.2f, u: %.2f \r\n", e, y, r, u);
 
