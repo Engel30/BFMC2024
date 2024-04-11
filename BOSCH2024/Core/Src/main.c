@@ -284,6 +284,9 @@ int main(void)
 		case 0:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 			HardwareEnable = 0;
+			//dataRX.enable = 1;
+			//dataRX.linear_speed_ref_m_s = 0.20;
+			//dataRX.curvature_radius_ref_m = 10;
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
@@ -293,6 +296,10 @@ int main(void)
 
 		if(flag_button != -1)
 			flag_cal = 0;
+
+		//bno055_vector_t magnet = bno055_getVectorMagnetometer();
+		//printf("magnet.x:%f, magnet.y:%f\r\n", magnet.x, magnet.y);
+		//printf("%f;%f\r\n", magnet.x, magnet.y);
 
 		//-------------------------------------------------------------
 		//Controllo

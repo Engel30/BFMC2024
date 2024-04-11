@@ -24,14 +24,9 @@
 #define MAX_U_TRACTION MAX_PWM // Valore di duty [% del periodo]
 #define MIN_U_TRACTION MIN_PWM // Valore di duty [% del periodo]
 
-//TRACTION PID RETRO FRONTE
+//TRACTION PID FRONTE
 #define KP_TRACTION 0.0000011//0.000015 //0.0001
 #define KI_TRACTION 0.001 //0.0030 //0.003
-
-/*
-#define KP_TRACTION 0.0000011//0.00006 //0.0001
-#define KI_TRACTION 0.001 //0.001 //0.003
- */
 
 //TRACTION PID RETRO
 #define KP_TRACTION_RWD 0.00000007 //0.00000007
