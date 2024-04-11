@@ -884,7 +884,10 @@ static void MX_GPIO_Init(void)
 void TransmitTelemetry(){
 	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
 	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
-	printf("%f; %f; %f", dataTX.current_servo_angle_deg, dataTX.current_speed_rpm, dataTX.current_yaw_rate_deg_sec);
+	float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
+
+	bno055_vector_t accel = bno055_getVectorAccelerometer();
+	printf("%f; %f; %f; %f, %f", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, dataTX.current_yaw_rate_deg_sec);
 }
 
 //Timer11 for temporization
