@@ -167,9 +167,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 		memcpy(msg, RxBuf, Size);
 		float floatArray[MAX_VALUES];
 		parseCSV(msg, floatArray);
-		dataRX.enable = floatArray[0];
-		dataRX.linear_speed_ref_m_s = floatArray[1];
-		dataRX.curvature_radius_ref_m = floatArray[2];
+		if(floatArray[0] == 0 || floatArray[0] == 1){
+			dataRX.enable = floatArray[0];
+			dataRX.linear_speed_ref_m_s = floatArray[1];
+			dataRX.curvature_radius_ref_m = floatArray[2];
+		}
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
 	}
 }
@@ -284,13 +286,13 @@ int main(void)
 		case 0:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 			HardwareEnable = 0;
-			//dataRX.enable = 1;
-			//dataRX.linear_speed_ref_m_s = 0.20;
-			//dataRX.curvature_radius_ref_m = 10;
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 			HardwareEnable=1;
+			//dataRX.enable = 1;
+			//dataRX.linear_speed_ref_m_s = 0.20;
+			//dataRX.curvature_radius_ref_m = 10;
 			break;
 		}
 
@@ -343,7 +345,7 @@ int main(void)
 				//printf("%f;%f\r\n", x_acceleration, 0);
 
 				//Decido quale PID usare in base al verso del moto
-				if(x_acceleration < -1.2)
+				if(0) //x_acceleration < -1.2)
 					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 				else{
 					if(vehicleState.motor_speed_ref_RPM >= 0)
