@@ -141,6 +141,8 @@ int MAX_VALUES = 3;
 int cnt_sterzo = 0;
 float angolo_sterzo = 20;
 
+const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -264,8 +266,6 @@ int main(void)
 
 	//Begin Interrupt Serial listening
 	//HAL_UART_Receive_IT(&huart6, char_in, 1);
-
-	float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
   /* USER CODE END 2 */
 
@@ -886,10 +886,12 @@ static void MX_GPIO_Init(void)
 void TransmitTelemetry(){
 	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
 	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
-	float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
-	printf("%f; %f; %f; %f, %f", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, dataTX.current_yaw_rate_deg_sec);
+	bno055_vector_t angle = bno055_getVectorAccelerometer();
+	bno055_vector_t magne = bno055_getVectorAccelerometer();
+	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n",
+			accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
 }
 
 //Timer11 for temporization
