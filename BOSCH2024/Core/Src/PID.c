@@ -30,9 +30,9 @@ float PID_controller(PID* p , float y, float r){
 
 	p->e_old = e;
 
-/*
-	u = Pterm + newIterm + Dterm + p->offset;
 
+	u = Pterm + newIterm + Dterm + p->offset;
+/*
 	if (u > 2*p->u_max || u < 2*p->u_min){
 		p->Iterm = 0;
 	}
