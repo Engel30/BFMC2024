@@ -139,7 +139,7 @@ int MAX_VALUES = 3;
 
 //Test sterzo massimo
 int cnt_sterzo = 0;
-float angolo_sterzo = 20;
+float angolo_sterzo = 0;
 
 const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
@@ -279,7 +279,8 @@ int main(void)
 		switch(flag_button){
 		//Calibrazione
 		case -1:
-			ProceduraCalibrazione();
+			if(dataRX.enable == 0)
+				ProceduraCalibrazione();
 			//printf("%f\r\n", duty);
 			break;
 			//Idle
@@ -289,15 +290,21 @@ int main(void)
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-			HardwareEnable=1;
+			HardwareEnable = 1;
 			//dataRX.enable = 1;
 			//dataRX.linear_speed_ref_m_s = 0.20;
-			//dataRX.curvature_radius_ref_m = 10;
+			//dataRX.curvature_radius_ref_m = 0.73;
+			//angolo_sterzo = -46;
+			//servo_motor(angolo_sterzo);
+			//printf("%f\r\n", angolo_sterzo);
 			break;
 		}
 
+		//CALIBRAZIONE CON PULSANTE
+		/*
 		if(flag_button != -1)
 			flag_cal = 0;
+		 */
 
 		//bno055_vector_t magnet = bno055_getVectorMagnetometer();
 		//printf("magnet.x:%f, magnet.y:%f\r\n", magnet.x, magnet.y);
@@ -873,7 +880,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : External_button_Pin */
+  GPIO_InitStruct.Pin = External_button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(External_button_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
@@ -890,8 +906,8 @@ void TransmitTelemetry(){
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
 	bno055_vector_t angle = bno055_getVectorAccelerometer();
 	bno055_vector_t magne = bno055_getVectorAccelerometer();
-	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n",
-			accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n",
+			//accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
 }
 
 //Timer11 for temporization
@@ -914,9 +930,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			cnt_sterzo++;
 		}
 
-		if(cnt_sterzo == 100){
+		// Prova per aumentare lo sterzo gradualmente
+		if(cnt_sterzo == 200){
 			cnt_sterzo = 0;
-			angolo_sterzo++;
+			angolo_sterzo -= 5;
+		} else if(angolo_sterzo < -45){
+			angolo_sterzo = -30;
 		}
 
 	}
@@ -933,7 +952,7 @@ int __io_putchar(int ch) {
 //BLUE user button
 //CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_13) {
+	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
 			buttonPressStartTime = cnt_10ms_button;
 
@@ -1009,16 +1028,19 @@ void ProceduraCalibrazione(){
 		duty = NEUTRAL_PWM;
 		BL_set_PWM(duty);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		servo_motor(-20);
 	}
 	else if(counter_cal_ESC <= 900){
 		duty = MAX_PWM;
 		BL_set_PWM(duty);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+		servo_motor(0);
 	}
 	else if(counter_cal_ESC <= 1100){
 		duty = MIN_PWM;
 		BL_set_PWM(duty);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+		servo_motor(20);
 	}
 	else if(counter_cal_ESC <= 1200){
 		if(!(counter_cal_ESC % 15)){

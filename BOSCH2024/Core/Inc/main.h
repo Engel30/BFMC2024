@@ -71,6 +71,9 @@ void Error_Handler(void);
 #define USART_2_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
+#define External_button_Pin GPIO_PIN_2
+#define External_button_GPIO_Port GPIOB
+#define External_button_EXTI_IRQn EXTI2_IRQn
 #define PWM_SERVO_Pin GPIO_PIN_8
 #define PWM_SERVO_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
