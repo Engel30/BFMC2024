@@ -40,6 +40,7 @@ typedef struct SerialDataRX {
 	float curvature_radius_ref_m; // [m]
 	float linear_speed_ref_m_s; //[m/s]
 	int enable; //Start Flag [bool]
+	float offset;
 } serialDataRX;
 
 typedef struct SerialDataTX {
@@ -173,6 +174,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 			dataRX.enable = floatArray[0];
 			dataRX.linear_speed_ref_m_s = floatArray[1];
 			dataRX.curvature_radius_ref_m = floatArray[2];
+			dataRX.offset = floatArray[3];
 		}
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
 	}
@@ -415,6 +417,7 @@ int main(void)
 			if(flag_button != -1){
 				BL_set_PWM(NEUTRAL_PWM);
 				servo_motor(0);
+				TransmitTelemetry();
 			}
 		}
 
@@ -904,10 +907,10 @@ void TransmitTelemetry(){
 	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
 
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
-	bno055_vector_t angle = bno055_getVectorAccelerometer();
-	bno055_vector_t magne = bno055_getVectorAccelerometer();
-	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n",
-			//accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
+	bno055_vector_t angle = bno055_getVectorGyroscope();
+	bno055_vector_t magne = bno055_getVectorMagnetometer();
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
+	printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
 }
 
 //Timer11 for temporization
@@ -943,8 +946,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
-	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
-	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF);
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
+	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 
