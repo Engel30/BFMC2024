@@ -137,6 +137,8 @@ uint8_t msg[45] = { "\0" };
 uint8_t char_in = '\0';
 int msg_len = 0;
 int MAX_VALUES = 3;
+float last_read;
+int cnt_DMA;
 
 //Test sterzo massimo
 int cnt_sterzo = 0;
@@ -377,6 +379,7 @@ int main(void)
 				bno055_vector_t v = bno055_getVectorGyroscope();
 				vehicleState.yaw_rate_deg_sec = v.z;
 				vehicleState.yaw_rate_rad_sec = (vehicleState.yaw_rate_deg_sec * M_PI) / 180;
+				last_read = dataRX.curvature_radius_ref_m;
 
 				if (dataRX.curvature_radius_ref_m >= MAX_CURVATURE_RADIUS_FOR_STRAIGHT) {
 
@@ -918,6 +921,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
 		Flag_10ms = 1;
 
+		if (dataRX.curvature_radius_ref_m = last_read){
+			cnt_DMA++;
+			if(cnt_DMA >= 5){
+			    HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
+				cnt_DMA = 0;
+			}
+		}
 		//Encoder
 		vehicleState.counts = TIM2->CNT;
 		TIM2->CNT = TIM2->ARR / 2;
