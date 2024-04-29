@@ -237,22 +237,22 @@ int main(void)
 	//PID traction FWD
 	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 	MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0);
+	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 0);
 
 	//PID traction RWD
 	init_PID(&pid_traction_RWD, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 	MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0);
+	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, 0);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0);
+	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, 0);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
 	MIN_U_STEERING, 0);
-	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0);
+	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 1);
 
 	//IMU BNO055 Configuration
 	HAL_I2C_IsDeviceReady(&hi2c1, BNO055_I2C_ADDR << 1, 5, 1000);
