@@ -194,11 +194,11 @@ int main(void) {
 	printf("Initialization Completed!\r\n");
 
 	//Test without Raspberry
-	//data.enable = 0;
+	//data.enable = 1;
 	//data.valid = 1;
 	//data.offset = 0.0;
 	//data.curvature_radius_ref_m = MAX_CURVATURE_RADIUS_FOR_STRAIGHT; //with r=1000000 the car goes straight
-	//data.linear_speed_ref_m_s = 1.0;
+	//data.linear_speed_ref_m_s = 0.30;
 
 	float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS
 			/ MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION;
@@ -783,7 +783,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		}
 
 		if (time_counter == 580) {
-			data.enable = 0;
+			//data.enable = 0;
 		}
 		/*
 		 if (time_counter == 3000) {

@@ -282,9 +282,9 @@ int main(void)
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 			HardwareEnable = 1;
-			//dataRX.enable = 1;
-			//dataRX.linear_speed_ref_m_s = 0.20;
-			//dataRX.curvature_radius_ref_m = 0.73;
+			dataRX.enable = 1;
+			dataRX.linear_speed_ref_m_s = 0.20;
+			dataRX.curvature_radius_ref_m = 10;
 			//angolo_sterzo = -46;
 			//servo_motor(angolo_sterzo);
 			//printf("%f\r\n", angolo_sterzo);
@@ -318,6 +318,7 @@ int main(void)
 				vehicleState.delta_angle_deg = (vehicleState.delta_count * 360) / ((double) (ENCODER_PPR * ENCODER_COUNTING_MODE * GEARBOX_RATIO));
 				vehicleState.motor_speed_deg_sec = vehicleState.delta_angle_deg / ENCODER_SAMPLING_TIME;
 				tempRPM = DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
+				//vehicleState.motor_speed_RPM = DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
 
 				//Filtraggio della velocità
 				ArrayRPM[PtrRPM] = tempRPM;
@@ -332,7 +333,8 @@ int main(void)
 				else
 					PtrRPM++;
 				vehicleState.motor_speed_RPM = MeanRPM;
-				printf("%f;%f\r\n", vehicleState.motor_speed_RPM, tempRPM);
+
+				//printf("%f;%f\r\n", vehicleState.motor_speed_ref_RPM, vehicleState.motor_speed_RPM);
 
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
@@ -897,7 +899,7 @@ void TransmitTelemetry(){
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
 	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
-	printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
+	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
 }
 
 //Timer11 for temporization
