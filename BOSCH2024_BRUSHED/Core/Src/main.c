@@ -49,7 +49,6 @@ typedef struct SerialDataTX {
 	float current_speed_rpm; // [m]
 	float current_servo_angle_deg; // [m/s]
 	float current_yaw_rate_deg_sec; // [°/s]
-<<<<<<< Updated upstream
 	float quaternion_x;
 	float quaternion_y;
 	float quaternion_z;
@@ -57,11 +56,6 @@ typedef struct SerialDataTX {
 	float magne_x;
 	float magne_y;
 	float magne_z;
-=======
-	float magnetometer_x;
-	float magnetometer_y;
-	float magnetometer_z;
->>>>>>> Stashed changes
 	float accel_x;
 	float accel_y;
 	float accel_z;
@@ -915,8 +909,6 @@ void TransmitTelemetry(){
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
-<<<<<<< Updated upstream
-<<<<<<< HEAD
 	bno055_vector_t quat = bno055_getVectorQuaternion();
 	dataTX.accel_x = accel.x;
 	dataTX.accel_y = accel.y;
@@ -932,24 +924,7 @@ void TransmitTelemetry(){
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
 	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
-	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
-=======
-	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
-	printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
->>>>>>> 9aca0745bca7eaf926b1b6dfccf8c0e7faa65da5
-=======
-	dataTX.accel_x = accel.x;
-	dataTX.accel_y = accel.y;
-	dataTX.accel_z = accel.z;
-	dataTX.magnetometer_x = magne.x;
-	dataTX.magnetometer_y = magne.y;
-	dataTX.magnetometer_z = magne.z;
-	dataTX.angle_x = angle.x;
-	dataTX.angle_y = angle.y;
-	dataTX.angle_z = angle.z;
-	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.magnetometer_x, dataTX.magnetometer_y, dataTX.magnetometer_z);
-	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
->>>>>>> Stashed changes
+
 }
 
 //Timer11 for temporization
