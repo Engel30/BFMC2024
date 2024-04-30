@@ -9,7 +9,6 @@ typedef struct PID{
 	float Kp; //guadagno proporzionale
 	float Ki; //guadagno integrale
 	float Kd; //guadagno derivativo
-	float Kb; //guadagno del back-calculation per l'anti-windup
 
 	float Tc; //periodo
 	float u_max; //limite superiore
@@ -22,7 +21,7 @@ typedef struct PID{
 }PID;
 
 void init_PID(PID*, float, float, float, float);
-void tune_PID(PID*,float,float,float,float);
+void tune_PID(PID*,float,float,float);
 float PID_controller(PID*,float,float);
 
 
