@@ -49,6 +49,15 @@ typedef struct SerialDataTX {
 	float current_speed_rpm; // [m]
 	float current_servo_angle_deg; // [m/s]
 	float current_yaw_rate_deg_sec; // [°/s]
+	float magne_x;
+	float magne_y;
+	float magne_z;
+	float accel_x;
+	float accel_y;
+	float accel_z;
+	float angle_x;
+	float angle_y;
+	float angle_z;
 } serialDataTX;
 
 typedef struct VehicleData {
@@ -237,11 +246,11 @@ int main(void)
 
 	//PID traction
 	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION, MIN_U_TRACTION, 0);
-	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 1);
+	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING, MIN_U_STEERING, 0);
-	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 1);
+	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0);
 
 	//IMU BNO055 Configuration
 	HAL_I2C_IsDeviceReady(&hi2c1, BNO055_I2C_ADDR << 1, 5, 1000);
@@ -898,7 +907,16 @@ void TransmitTelemetry(){
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
-	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
+	dataTX.accel_x = accel.x;
+	dataTX.accel_y = accel.y;
+	dataTX.accel_z = accel.z;
+	dataTX.angle_x = angle.x;
+	dataTX.angle_y = angle.y;
+	dataTX.angle_z = angle.z;
+	dataTX.magne_x = magne.x;
+	dataTX.magne_y = magne.y;
+	dataTX.magne_z = magne.z;
+	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.magne_x, dataTX.magne_y, dataTX.magne_z);
 	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
 }
 
@@ -942,8 +960,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
-	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
-	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
+	//HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
+	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 

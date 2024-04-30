@@ -10,11 +10,10 @@ void init_PID(PID* p, float Tc, float u_max, float u_min, float offset){
 	p->offset = offset;
 }
 
-void tune_PID(PID* p, float Kp, float Ki, float Kd, float Kb){
+void tune_PID(PID* p, float Kp, float Ki, float Kd){
 	p->Kp = Kp;
 	p->Ki = Ki;
 	p->Kd = Kd;
-	p->Kb = Kb;
 }
 
 float PID_controller(PID* p , float y, float r){
@@ -29,18 +28,23 @@ float PID_controller(PID* p , float y, float r){
 	newIterm = p->Iterm + (p->Ki)*p->Tc*p->e_old;
 	float Dterm = (p->Kd/p->Tc)*(e - p->e_old);
 
+	p->e_old = e;
+
 	u = Pterm + newIterm + Dterm + p->offset;
 
 
 	// VECCHIA SATURAZIONE
 	//-----------------------------------------
 	//Verifico la saturazione generale del PID
-	if(u > p->u_max)
+	if(u > p->u_max){
 		u = p->u_max;
-	else if(u < p->u_min)
+	}
+	else if(u < p->u_min){
 		u = p->u_min;
-	else
+	}
+	else{
 		p->Iterm = newIterm;
+	}
 	//-----------------------------------------
 
 
@@ -60,7 +64,6 @@ float PID_controller(PID* p , float y, float r){
 	u = saturated_u;*/
 	//-----------------------------------------
 
-	p->e_old = e;
 
 
 	//Print per il PID di sterzo
