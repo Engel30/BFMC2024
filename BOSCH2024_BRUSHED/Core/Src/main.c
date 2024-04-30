@@ -49,6 +49,10 @@ typedef struct SerialDataTX {
 	float current_speed_rpm; // [m]
 	float current_servo_angle_deg; // [m/s]
 	float current_yaw_rate_deg_sec; // [°/s]
+	float quaternion_x;
+	float quaternion_y;
+	float quaternion_z;
+	float quaternion_w;
 	float magne_x;
 	float magne_y;
 	float magne_z;
@@ -245,11 +249,11 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim11);
 
 	//PID traction
-	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION, MIN_U_TRACTION, 0);
+	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION, MIN_U_TRACTION, 0, 1);
 	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0);
 
 	//PID steering
-	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING, MIN_U_STEERING, 0);
+	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING, MIN_U_STEERING, 0, 12);
 	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0);
 
 	//IMU BNO055 Configuration
@@ -907,6 +911,7 @@ void TransmitTelemetry(){
 	bno055_vector_t accel = bno055_getVectorAccelerometer();
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
+	bno055_vector_t quat = bno055_getVectorQuaternion();
 	dataTX.accel_x = accel.x;
 	dataTX.accel_y = accel.y;
 	dataTX.accel_z = accel.z;
@@ -916,7 +921,11 @@ void TransmitTelemetry(){
 	dataTX.magne_x = magne.x;
 	dataTX.magne_y = magne.y;
 	dataTX.magne_z = magne.z;
-	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.magne_x, dataTX.magne_y, dataTX.magne_z);
+	dataTX.quaternion_x = quat.x;
+	dataTX.quaternion_y = quat.y;
+	dataTX.quaternion_z = quat.z;
+	dataTX.quaternion_w = quat.w;
+	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
 	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
 }
 
