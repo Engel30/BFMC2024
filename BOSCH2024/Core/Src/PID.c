@@ -17,6 +17,11 @@ void tune_PID(PID*p, float Kp, float Ki, float Kd, float Kb){
 	p->Kb = Kb;
 }
 
+void resetPID(PID p){
+	p->Kp = 0;
+	p->kd = 0;
+}
+
 float PID_controller(PID* p , float y, float r){
 	float u;
 	float newIterm;

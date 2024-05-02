@@ -65,6 +65,9 @@ typedef struct VehicleData {
 	double yaw_rate_rad_sec; // [rad/s]
 	double yaw_rate_deg_sec; // [°/s]
 	double yaw_rate_ref_rad_sec; //[rad/s]
+
+	//logica
+	int enableStateChanged;
 } vehicleData;
 /* USER CODE END PTD */
 
@@ -275,8 +278,8 @@ int main(void)
 	//Servo Neutral Position
 	servo_motor(0);
 
-	//Begin Interrupt Serial listening
-	//HAL_UART_Receive_IT(&huart6, char_in, 1);
+	//resetvalori pid
+	vehicleState.enableStateChanged = 1;
 
 	/* USER CODE END 2 */
 
@@ -311,20 +314,18 @@ int main(void)
 			break;
 		}
 
-		//CALIBRAZIONE CON PULSANTE
-		/*
-		if(flag_button != -1)
-			flag_cal = 0;
-		 */
-
-		//bno055_vector_t magnet = bno055_getVectorMagnetometer();
-		//printf("magnet.x:%f, magnet.y:%f\r\n", magnet.x, magnet.y);
-		//printf("%f;%f\r\n", magnet.x, magnet.y);
-
 		//-------------------------------------------------------------
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
 			HAL_NVIC_SystemReset();
+
+		if(vehicleState.enableStateChanged){
+			resetPID(pid_steering);
+			resetPID(pid_traction);
+			resetPID(pid_traction_RWD);
+			resetPID(pid_traction_DESC);
+			vehicleState.enableStateChanged = 0;
+		}
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -979,7 +980,11 @@ int __io_putchar(int ch) {
 //CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
+		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
+			//resetvalori pid
+			vehicleState.enableStateChanged = 1;
+
+			// Button pressed
 			buttonPressStartTime = cnt_10ms_button;
 
 		} else { // Button released
