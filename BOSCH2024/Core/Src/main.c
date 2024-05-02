@@ -47,6 +47,19 @@ typedef struct SerialDataTX {
 	float current_speed_rpm; // [m]
 	float current_servo_angle_deg; // [m/s]
 	float current_yaw_rate_deg_sec; // [°/s]
+	float quaternion_x;
+	float quaternion_y;
+	float quaternion_z;
+	float quaternion_w;
+	float magne_x;
+	float magne_y;
+	float magne_z;
+	float accel_x;
+	float accel_y;
+	float accel_z;
+	float angle_x;
+	float angle_y;
+	float angle_z;
 } serialDataTX;
 
 typedef struct VehicleData {
@@ -171,20 +184,7 @@ void resetBNO055();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
-	if (huart->Instance == USART6){
-		memcpy(msg, RxBuf, Size);
-		float floatArray[MAX_VALUES];
-		parseCSV(msg, floatArray);
-		if(floatArray[0] == 0 || floatArray[0] == 1){
-			dataRX.enable = floatArray[0];
-			dataRX.linear_speed_ref_m_s = floatArray[1];
-			dataRX.curvature_radius_ref_m = floatArray[2];
-			dataRX.offset = floatArray[3];
-		}
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
-	}
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -247,22 +247,22 @@ int main(void)
 	//PID traction FWD
 	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0);
+	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 1);
 
 	//PID traction RWD
 	init_PID(&pid_traction_RWD, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0);
+	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, 1);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0);
+	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, 1);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
 			MIN_U_STEERING, 0);
-	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0);
+	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 12);
 
 	//IMU BNO055 Configuration
 	HAL_I2C_IsDeviceReady(&hi2c1, BNO055_I2C_ADDR << 1, 5, 1000);
@@ -293,9 +293,8 @@ int main(void)
 		switch(flag_button){
 		//Calibrazione
 		case -1:
-			if(dataRX.enable == 0)
+			//if(dataRX.enable == 0)
 				ProceduraCalibrazione();
-			//printf("%f\r\n", duty);
 			break;
 			//Idle
 		case 0:
@@ -318,16 +317,6 @@ int main(void)
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
 			HAL_NVIC_SystemReset();
-
-		/*
-		if(vehicleState.enableStateChanged){
-			resetPID(pid_steering);
-			resetPID(pid_traction);
-			resetPID(pid_traction_RWD);
-			resetPID(pid_traction_DESC);
-			vehicleState.enableStateChanged = 0;
-		}
-		*/
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -358,7 +347,6 @@ int main(void)
 				else
 					PtrRPM++;
 				vehicleState.motor_speed_RPM = MeanRPM;
-				//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, tempRPM);
 
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
@@ -434,12 +422,15 @@ int main(void)
 				servo_motor(0);
 
 				// Reset dei pid
-				resetPID(pid_steering);
-				resetPID(pid_traction);
-				resetPID(pid_traction_RWD);
-				resetPID(pid_traction_DESC);
+				resetPID(&pid_steering);
+				resetPID(&pid_traction);
+				resetPID(&pid_traction_RWD);
+				resetPID(&pid_traction_DESC);
+				printf("PID RESETTATO! (FERMA)\r\n");
 			}
 		}
+
+		TransmitTelemetry();
 
 	}
 	/* USER CODE END 3 */
@@ -924,25 +915,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void TransmitTelemetry(){
-	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
-	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
-
-	bno055_vector_t accel = bno055_getVectorAccelerometer();
-	bno055_vector_t angle = bno055_getVectorGyroscope();
-	bno055_vector_t magne = bno055_getVectorMagnetometer();
-	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
-	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
-}
-
 //Timer11 for temporization
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
 		Flag_10ms = 1;
-		TransmitTelemetry();
 
-		if (dataRX.curvature_radius_ref_m = last_read){
+		if (dataRX.curvature_radius_ref_m == last_read){
 			cnt_DMA++;
 			if(cnt_DMA >= 5){
 				HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
@@ -979,13 +957,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
-	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
+	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 
 //-------------------------------------------------------------
 //BLUE user button
-//CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
@@ -1018,43 +995,63 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	}
 }
 
-//CALIBRAZIONE CON PULSANTE
-/*
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_13) {
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
-			buttonPressStartTime = cnt_10ms_button;
+//-------------------------------------------------------------
+// COMUNICAZIONE (RICEZIONE DATI)
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	if (huart->Instance == USART6){
+		memcpy(msg, RxBuf, Size);
+		float floatArray[MAX_VALUES];
+		parseCSV(msg, floatArray);
 
-		} else { // Button released
-			buttonPressEndTime = cnt_10ms_button;
-
-			//Verifico quantotemp ho tenuto premuto il tasto
-			pressDuration = buttonPressEndTime - buttonPressStartTime;
-			if (pressDuration < SHORT_PRESS_THRESHOLD){
-				//CALIBRAZIONE
-				if(flag_button == -1){
-					if(flag_cal >= 0 && flag_cal < 3)
-						flag_cal++;
-					else
-						flag_button = 0;
-				} else { //PRESSIONE NORMALE
-					if(flag_button >= 0 && flag_button < max_flag_button)
-						flag_button++;
-					else
-						flag_button = 0;
-				}
-
-			} else if (pressDuration >= LONG_PRESS_THRESHOLD){
-				flag_button = -1;
-				counter_cal_ESC = 0;
-			}
+		if(floatArray[0] == 0 || floatArray[0] == 1){
+			dataRX.enable = floatArray[0];
+			dataRX.linear_speed_ref_m_s = floatArray[1];
+			dataRX.curvature_radius_ref_m = floatArray[2];
 		}
+
+		if(floatArray[0] == 3){
+			// Reset dei pid
+			resetPID(&pid_steering);
+			resetPID(&pid_traction);
+			resetPID(&pid_traction_RWD);
+			resetPID(&pid_traction_DESC);
+			printf("PID RESETTATO! (TASTO)\r\n");
+		}
+
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
 	}
 }
- */
+
+// COMUNICAZIONE (TRASMISSIONE DATI)
+void TransmitTelemetry(){
+	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
+	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
+
+	bno055_vector_t accel = bno055_getVectorAccelerometer();
+	bno055_vector_t angle = bno055_getVectorGyroscope();
+	bno055_vector_t magne = bno055_getVectorMagnetometer();
+	bno055_vector_t quat = bno055_getVectorQuaternion();
+	dataTX.accel_x = accel.x;
+	dataTX.accel_y = accel.y;
+	dataTX.accel_z = accel.z;
+	dataTX.angle_x = angle.x;
+	dataTX.angle_y = angle.y;
+	dataTX.angle_z = angle.z;
+	dataTX.magne_x = magne.x;
+	dataTX.magne_y = magne.y;
+	dataTX.magne_z = magne.z;
+	dataTX.quaternion_x = quat.x;
+	dataTX.quaternion_y = quat.y;
+	dataTX.quaternion_z = quat.z;
+	dataTX.quaternion_w = quat.w;
+	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
+}
+
 //-------------------------------------------------------------
 //CALIBRAZIONE TEMPORIZZATA
 void ProceduraCalibrazione(){
+
 	if(counter_cal_ESC < 5){
 		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
 	}
@@ -1098,34 +1095,6 @@ void resetBNO055(){
 	HAL_Delay(800);
 }
 
-//CALIBRAZIONE CON PULSANTE
-/*
-void ProceduraCalibrazione(){
-	printf("%f; %d\r\n", duty, flag_cal);
-	switch(flag_cal){
-	case 0:
-		if(!(counter_cal_ESC % 15)){
-			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		}
-		break;
-	case 1:
-		duty = NEUTRAL_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		break;
-	case 2:
-		duty = MAX_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-		break;
-	case 3:
-		duty = MIN_PWM;
-		BL_set_PWM(duty);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-		break;
-	}
-}
- */
 /* USER CODE END 4 */
 
 /**

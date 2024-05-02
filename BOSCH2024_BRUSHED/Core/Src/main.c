@@ -183,20 +183,7 @@ void resetBNO055();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
-	if (huart->Instance == USART6){
-		memcpy(msg, RxBuf, Size);
-		float floatArray[MAX_VALUES];
-		parseCSV(msg, floatArray);
-		if(floatArray[0] == 0 || floatArray[0] == 1){
-			dataRX.enable = floatArray[0];
-			dataRX.linear_speed_ref_m_s = floatArray[1];
-			dataRX.curvature_radius_ref_m = floatArray[2];
-			dataRX.offset = floatArray[3];
-		}
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
-	}
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -422,6 +409,10 @@ int main(void)
 			if(flag_button != -1){
 				set_PWM_and_dir(0, vehicleState.motor_direction_ref);
 				servo_motor(0);
+
+				// Reset dei pid
+				resetPID(&pid_steering);
+				resetPID(&pid_traction);
 			}
 		}
 
@@ -908,32 +899,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void TransmitTelemetry(){
-	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
-	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
-
-	bno055_vector_t accel = bno055_getVectorAccelerometer();
-	bno055_vector_t angle = bno055_getVectorGyroscope();
-	bno055_vector_t magne = bno055_getVectorMagnetometer();
-	bno055_vector_t quat = bno055_getVectorQuaternion();
-	dataTX.accel_x = accel.x;
-	dataTX.accel_y = accel.y;
-	dataTX.accel_z = accel.z;
-	dataTX.angle_x = angle.x;
-	dataTX.angle_y = angle.y;
-	dataTX.angle_z = angle.z;
-	dataTX.magne_x = magne.x;
-	dataTX.magne_y = magne.y;
-	dataTX.magne_z = magne.z;
-	dataTX.quaternion_x = quat.x;
-	dataTX.quaternion_y = quat.y;
-	dataTX.quaternion_z = quat.z;
-	dataTX.quaternion_w = quat.w;
-	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
-
-}
-
 //Timer11 for temporization
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
@@ -975,14 +940,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
-	//HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
 	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 
 //-------------------------------------------------------------
 //BLUE user button
-//CALIBRAZIONE TEMPORIZZATA
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) { // Button pressed
@@ -1009,6 +973,57 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			}
 		}
 	}
+}
+
+//-------------------------------------------------------------
+// COMUNICAZIONE (RICEZIONE DATI)
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	if (huart->Instance == USART6){
+		memcpy(msg, RxBuf, Size);
+		float floatArray[MAX_VALUES];
+		parseCSV(msg, floatArray);
+
+		if(floatArray[0] == 0 || floatArray[0] == 1){
+			dataRX.enable = floatArray[0];
+			dataRX.linear_speed_ref_m_s = floatArray[1];
+			dataRX.curvature_radius_ref_m = floatArray[2];
+		}
+
+		if(floatArray[0] == 3){
+			// Reset dei pid
+			resetPID(&pid_steering);
+			resetPID(&pid_traction);
+			resetPID(&pid_traction_RWD);
+			resetPID(&pid_traction_DESC);
+		}
+
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
+	}
+}
+
+// COMUNICAZIONE (TRASMISSIONE DATI)
+void TransmitTelemetry(){
+	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
+	dataTX.current_yaw_rate_deg_sec = vehicleState.yaw_rate_deg_sec;
+
+	bno055_vector_t accel = bno055_getVectorAccelerometer();
+	bno055_vector_t angle = bno055_getVectorGyroscope();
+	bno055_vector_t magne = bno055_getVectorMagnetometer();
+	bno055_vector_t quat = bno055_getVectorQuaternion();
+	dataTX.accel_x = accel.x;
+	dataTX.accel_y = accel.y;
+	dataTX.accel_z = accel.z;
+	dataTX.angle_x = angle.x;
+	dataTX.angle_y = angle.y;
+	dataTX.angle_z = angle.z;
+	dataTX.magne_x = magne.x;
+	dataTX.magne_y = magne.y;
+	dataTX.magne_z = magne.z;
+	dataTX.quaternion_x = quat.x;
+	dataTX.quaternion_y = quat.y;
+	dataTX.quaternion_z = quat.z;
+	dataTX.quaternion_w = quat.w;
+	printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
 }
 
 /* USER CODE END 4 */

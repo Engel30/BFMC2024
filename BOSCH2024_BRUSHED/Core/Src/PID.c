@@ -33,44 +33,12 @@ float PID_controller(PID* p , float y, float r){
 
 	u = Pterm + newIterm + Dterm + p->offset;
 
-
-	// VECCHIA SATURAZIONE
-	//-----------------------------------------
-	//Verifico la saturazione generale del PID
-	/*if(u > p->u_max){
-		u = p->u_max;
-	}
-	else if(u < p->u_min){
-		u = p->u_min;
-	}
-	else{
-		p->Iterm = newIterm;
-	}
-	*/
-	//-----------------------------------------
-
-
-	//NUOVA IMPLEMENTAZIONE CON BACK-CALCULATION
-	//-----------------------------------------
-	/*float saturated_u = u;
-
-	if (saturated_u > p->u_max)
-		saturated_u = p->u_max;
-	else if (saturated_u < p->u_min)
-		saturated_u = p->u_min;
-
-	// Correggo l'integrale
-	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-	p->Iterm = newIterm + correction;
-
-	u = saturated_u;*/
-	//-----------------------------------------
 	if(newIterm > p->u_max){
-			newIterm = p->u_max;
-		}
-		else if(newIterm < p->u_min){
-			newIterm = p->u_min;
-		}
+		newIterm = p->u_max;
+	}
+	else if(newIterm < p->u_min){
+		newIterm = p->u_min;
+	}
 
 	float saturated_u = u;
 
@@ -86,6 +54,9 @@ float PID_controller(PID* p , float y, float r){
 
 	u = saturated_u;
 
+	if(p->offset == 0){
+		printf("%f;%f\r\n", Pterm, newIterm);
+	}
 
 	return u;
 }

@@ -17,7 +17,7 @@ void tune_PID(PID*p, float Kp, float Ki, float Kd, float Kb){
 	p->Kb = Kb;
 }
 
-void resetPID(PID p){
+void resetPID(PID* p){
 	p->Iterm = 0;
 	p->e_old = 0;
 }
@@ -41,22 +41,22 @@ float PID_controller(PID* p , float y, float r){
 
 	// saturazione con back calculation
 	if(newIterm > p->u_max){
-			newIterm = p->u_max;
-		}
-		else if(newIterm < p->u_min){
-			newIterm = p->u_min;
-		}
+		newIterm = p->u_max;
+	}
+	else if(newIterm < p->u_min){
+		newIterm = p->u_min;
+	}
 
 	float saturated_u = u;
 
-	if(saturated_u > p_>u_max){
+	if(saturated_u > p->u_max){
 		saturated_u = p->u_max;
 	}
 	else if(saturated_u < p->u_min){
 		saturated_u = p->u_min;
 	}
 
-	float correction = p->kb * (saturated_u - u) * p->ki * p->Ic;
+	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
 	p->Iterm = newIterm + correction;
 
 	u = saturated_u;
