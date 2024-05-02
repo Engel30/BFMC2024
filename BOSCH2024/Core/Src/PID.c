@@ -18,8 +18,8 @@ void tune_PID(PID*p, float Kp, float Ki, float Kd, float Kb){
 }
 
 void resetPID(PID p){
-	p->Kp = 0;
-	p->kd = 0;
+	p->Iterm = 0;
+	p->e_old = 0;
 }
 
 float PID_controller(PID* p , float y, float r){
@@ -60,6 +60,10 @@ float PID_controller(PID* p , float y, float r){
 	p->Iterm = newIterm + correction;
 
 	u = saturated_u;
+
+	if(p->offset == 0){
+		printf("%f;%f\r\n", Pterm, newIterm);
+	}
 
 	return u;
 }

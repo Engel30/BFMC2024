@@ -279,7 +279,7 @@ int main(void)
 	servo_motor(0);
 
 	//resetvalori pid
-	vehicleState.enableStateChanged = 1;
+	//vehicleState.enableStateChanged = 1;
 
 	/* USER CODE END 2 */
 
@@ -319,6 +319,7 @@ int main(void)
 		if(bno055_getSystemStatus() != 5)
 			HAL_NVIC_SystemReset();
 
+		/*
 		if(vehicleState.enableStateChanged){
 			resetPID(pid_steering);
 			resetPID(pid_traction);
@@ -326,6 +327,7 @@ int main(void)
 			resetPID(pid_traction_DESC);
 			vehicleState.enableStateChanged = 0;
 		}
+		*/
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -432,6 +434,12 @@ int main(void)
 				BL_set_PWM(NEUTRAL_PWM);
 				servo_motor(0);
 				TransmitTelemetry();
+
+				// Reset dei pid
+				resetPID(pid_steering);
+				resetPID(pid_traction);
+				resetPID(pid_traction_RWD);
+				resetPID(pid_traction_DESC);
 			}
 		}
 
@@ -927,7 +935,7 @@ void TransmitTelemetry(){
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
 	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, tempRPM * RPM_2_m_s, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z);
-	printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
+	//printf("%f;%f\r\n", dataRX.offset, dataRX.curvature_radius_ref_m);
 }
 
 //Timer11 for temporization
@@ -942,6 +950,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 				cnt_DMA = 0;
 			}
 		}
+
 		//Encoder
 		vehicleState.counts = TIM2->CNT;
 		TIM2->CNT = TIM2->ARR / 2;
@@ -982,7 +991,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
 			//resetvalori pid
-			vehicleState.enableStateChanged = 1;
+			//vehicleState.enableStateChanged = 1;
 
 			// Button pressed
 			buttonPressStartTime = cnt_10ms_button;
@@ -990,7 +999,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		} else { // Button released
 			buttonPressEndTime = cnt_10ms_button;
 
-			//Verifico quantotemp ho tenuto premuto il tasto
+			//Verifico quanto tempo ho tenuto premuto il tasto
 			pressDuration = buttonPressEndTime - buttonPressStartTime;
 			if (pressDuration < SHORT_PRESS_THRESHOLD)
 			{
