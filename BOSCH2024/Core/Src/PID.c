@@ -10,10 +10,11 @@ void init_PID(PID* p, float Tc, float u_max, float u_min, float offset){
 	p->offset = offset;
 }
 
-void tune_PID(PID*p, float Kp, float Ki, float Kd){
+void tune_PID(PID*p, float Kp, float Ki, float Kd, float Kb){
 	p->Kp = Kp;
 	p->Ki = Ki;
 	p->Kd = Kd;
+	p->Kb = Kb;
 }
 
 float PID_controller(PID* p , float y, float r){
@@ -32,26 +33,29 @@ float PID_controller(PID* p , float y, float r){
 
 
 	u = Pterm + newIterm + Dterm + p->offset;
-/*
-	if (u > 2*p->u_max || u < 2*p->u_min){
-		p->Iterm = 0;
+
+	// saturazione con back calculation
+	if(newIterm > p->u_max){
+			newIterm = p->u_max;
+		}
+		else if(newIterm < p->u_min){
+			newIterm = p->u_min;
+		}
+
+	float saturated_u = u;
+
+	if(saturated_u > p_>u_max){
+		saturated_u = p->u_max;
 	}
-*/
-
-	if(u > p->u_max){
-		u = p->u_max;
-	} else if(u < p->u_min){
-		u = p->u_min;
-	} else {
-		p->Iterm = newIterm;
+	else if(saturated_u < p->u_min){
+		saturated_u = p->u_min;
 	}
 
+	float correction = p->kb * (saturated_u - u) * p->ki * p->Ic;
+	p->Iterm = newIterm + correction;
 
-	//printf("errore: %.2f, y: %.2f, r: %.2f, u: %.2f \r\n", e, y, r, u);
+	u = saturated_u;
 
-	if(p->offset == 0){
-		//printf("%f\r\n", u);
-	}
 	return u;
 }
 

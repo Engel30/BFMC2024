@@ -87,12 +87,6 @@ float PID_controller(PID* p , float y, float r){
 	u = saturated_u;
 
 
-	//Print per il PID di sterzo
-	if(p->offset == 0){
-		//printf("errore: %.2f, y: %.2f, r: %.2f, u: %.2f \r\n", e, y, r, u);
-		//printf("%f\r\n", u);
-	}
-
 	return u;
 }
 

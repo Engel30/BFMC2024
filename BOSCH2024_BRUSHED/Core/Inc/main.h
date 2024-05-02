@@ -74,6 +74,8 @@ void Error_Handler(void);
 #define External_button_Pin GPIO_PIN_2
 #define External_button_GPIO_Port GPIOB
 #define External_button_EXTI_IRQn EXTI2_IRQn
+#define IMU_RESET_Pin GPIO_PIN_9
+#define IMU_RESET_GPIO_Port GPIOC
 #define PWM_SERVO_Pin GPIO_PIN_8
 #define PWM_SERVO_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
