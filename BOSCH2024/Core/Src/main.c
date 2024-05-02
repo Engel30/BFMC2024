@@ -427,13 +427,11 @@ int main(void)
 					servo_motor(u_sterzo);
 				}
 				dataTX.current_servo_angle_deg = u_sterzo;
-				TransmitTelemetry();
 			}
 		} else {
 			if(flag_button != -1){
 				BL_set_PWM(NEUTRAL_PWM);
 				servo_motor(0);
-				TransmitTelemetry();
 
 				// Reset dei pid
 				resetPID(pid_steering);
@@ -942,6 +940,7 @@ void TransmitTelemetry(){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
 		Flag_10ms = 1;
+		TransmitTelemetry();
 
 		if (dataRX.curvature_radius_ref_m = last_read){
 			cnt_DMA++;
