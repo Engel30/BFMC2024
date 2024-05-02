@@ -262,7 +262,7 @@ int main(void)
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
 			MIN_U_STEERING, 0);
-	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 12);
+	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 16);
 
 	//IMU BNO055 Configuration
 	HAL_I2C_IsDeviceReady(&hi2c1, BNO055_I2C_ADDR << 1, 5, 1000);
@@ -957,7 +957,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
-	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
+	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 
