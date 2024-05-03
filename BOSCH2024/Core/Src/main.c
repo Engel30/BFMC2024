@@ -240,17 +240,17 @@ int main(void)
 	//PID traction FWD
 	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 1);
+	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 0);
 
 	//PID traction RWD
 	init_PID(&pid_traction_RWD, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, 1);
+	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, 0);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, 1);
+	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, 0);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
@@ -349,8 +349,10 @@ int main(void)
 				else{
 					if(vehicleState.motor_speed_ref_RPM >= 0)
 						u_trazione = PID_controller(&pid_traction, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-					else
+					else{
 						u_trazione = PID_controller(&pid_traction_RWD, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+						//printf("PID RETRO\r\n");
+					}
 				}
 
 				//Assegno il duty al motore
@@ -359,7 +361,7 @@ int main(void)
 				else
 					BL_set_PWM(u_trazione);
 
-				printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
+				//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
 
 				//-------------------------------------------------------------
 
@@ -408,6 +410,7 @@ int main(void)
 		} else {
 			if(flag_button != -1){
 				BL_set_PWM(NEUTRAL_PWM);
+				//BL_set_PWM(MIN_PWM+0.04);
 				servo_motor(0);
 
 				// Reset dei pid

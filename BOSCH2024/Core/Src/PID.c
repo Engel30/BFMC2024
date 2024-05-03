@@ -44,31 +44,45 @@ float PID_controller(PID* p , float y, float r){
 
 	u = Pterm + newIterm + Dterm + p->offset;
 
-	// ANTI-WINDUP DEL TERMINE INTEGRALE
-	if(newIterm > p->u_max){
-		newIterm = p->u_max;
-	}
-	else if(newIterm < p->u_min){
-		newIterm = p->u_min;
-	}
-
-	// saturazione con back-calculation
-	float saturated_u = u;
-
-	if(saturated_u > p->u_max){
-		saturated_u = p->u_max;
-	}
-	else if(saturated_u < p->u_min){
-		saturated_u = p->u_min;
+	if(p->offset == 0){
+		// ANTI-WINDUP DEL TERMINE INTEGRALE
+		if(newIterm > p->u_max){
+			newIterm = p->u_max;
+		}
+		else if(newIterm < p->u_min){
+			newIterm = p->u_min;
+		}
 	}
 
-	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-	p->Iterm = newIterm + correction;
+		// saturazione con back-calculation
+		float saturated_u = u;
 
-	u = saturated_u;
+		if(saturated_u > p->u_max){
+			saturated_u = p->u_max;
+		}
+		else if(saturated_u < p->u_min){
+			saturated_u = p->u_min;
+		}
 
-	if(p->offset != 0){
-		//printf("%f;%f\r\n", p->Iterm, correction);
+		float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
+		p->Iterm = newIterm + correction;
+
+		u = saturated_u;
+	/*
+	else{
+		if(u > p->u_max){
+			u = p->u_max;
+		}
+		else if(u < p->u_min){
+			u = p->u_min;
+		} else {
+			p->Iterm = newIterm;
+		}
+	}
+*/
+
+	if(p->offset == 0){
+		//printf("%f;%f;%f\r\n", u, p->Iterm, correction);
 	}
 
 	return u;
