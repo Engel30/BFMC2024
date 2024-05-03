@@ -29,6 +29,11 @@ float PID_controller(PID* p , float y, float r){
 
 	e = r-y;
 
+	if (isinf(p->Iterm) || isnan(p->Iterm)) {
+		p->Iterm = 0;
+		p->e_old = 0;
+	}
+
 
 	float Pterm = p->Kp*e;
 	newIterm = p->Iterm + (p->Ki)*p->Tc*p->e_old;
@@ -39,7 +44,7 @@ float PID_controller(PID* p , float y, float r){
 
 	u = Pterm + newIterm + Dterm + p->offset;
 
-	// saturazione con back calculation
+	// ANTI-WINDUP DEL TERMINE INTEGRALE
 	if(newIterm > p->u_max){
 		newIterm = p->u_max;
 	}
@@ -47,6 +52,7 @@ float PID_controller(PID* p , float y, float r){
 		newIterm = p->u_min;
 	}
 
+	// saturazione con back-calculation
 	float saturated_u = u;
 
 	if(saturated_u > p->u_max){
@@ -61,8 +67,8 @@ float PID_controller(PID* p , float y, float r){
 
 	u = saturated_u;
 
-	if(p->offset == 0){
-		printf("%f;%f\r\n", Pterm, newIterm);
+	if(p->offset != 0){
+		//printf("%f;%f\r\n", p->Iterm, correction);
 	}
 
 	return u;

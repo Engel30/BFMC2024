@@ -78,9 +78,6 @@ typedef struct VehicleData {
 	double yaw_rate_rad_sec; // [rad/s]
 	double yaw_rate_deg_sec; // [°/s]
 	double yaw_rate_ref_rad_sec; //[rad/s]
-
-	//logica
-	int enableStateChanged;
 } vehicleData;
 /* USER CODE END PTD */
 
@@ -155,10 +152,6 @@ int msg_len = 0;
 int MAX_VALUES = 3;
 float last_read;
 int cnt_DMA;
-
-//Test sterzo massimo
-int cnt_sterzo = 0;
-float angolo_sterzo = 0;
 
 const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
@@ -262,7 +255,7 @@ int main(void)
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
 			MIN_U_STEERING, 0);
-	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 16);
+	tune_PID(&pid_steering, KP_STEERING, KI_STEERING, 0, 50);
 
 	//IMU BNO055 Configuration
 	HAL_I2C_IsDeviceReady(&hi2c1, BNO055_I2C_ADDR << 1, 5, 1000);
@@ -277,9 +270,6 @@ int main(void)
 
 	//Servo Neutral Position
 	servo_motor(0);
-
-	//resetvalori pid
-	//vehicleState.enableStateChanged = 1;
 
 	/* USER CODE END 2 */
 
@@ -307,9 +297,6 @@ int main(void)
 			//dataRX.enable = 1;
 			//dataRX.linear_speed_ref_m_s = 0.20;
 			//dataRX.curvature_radius_ref_m = 0.73;
-			//angolo_sterzo = -46;
-			//servo_motor(angolo_sterzo);
-			//printf("%f\r\n", angolo_sterzo);
 			break;
 		}
 
@@ -372,6 +359,8 @@ int main(void)
 				else
 					BL_set_PWM(u_trazione);
 
+				printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
+
 				//-------------------------------------------------------------
 
 				//STEERING control
@@ -426,7 +415,7 @@ int main(void)
 				resetPID(&pid_traction);
 				resetPID(&pid_traction_RWD);
 				resetPID(&pid_traction_DESC);
-				printf("PID RESETTATO! (FERMA)\r\n");
+				//printf("PID RESETTATO! (FERMA)\r\n");
 			}
 		}
 
@@ -939,25 +928,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			counter_cal_ESC++;
 		}
 
-		if(flag_button == 1){
-			cnt_sterzo++;
-		}
-
-		// Prova per aumentare lo sterzo gradualmente
-		if(cnt_sterzo == 200){
-			cnt_sterzo = 0;
-			angolo_sterzo -= 5;
-		} else if(angolo_sterzo < -45){
-			angolo_sterzo = -30;
-		}
-
 	}
 }
 
 //USART2 -> ST_Link UART for DEBUG with USB (e.g. PUTTY)
 int __io_putchar(int ch) {
 	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF); //putty
-	//HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
+	HAL_UART_Transmit(&huart6, (uint8_t*) &ch, 1, 0xFFFF); //rpi
 	return ch;
 }
 
@@ -966,8 +943,6 @@ int __io_putchar(int ch) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
 		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
-			//resetvalori pid
-			//vehicleState.enableStateChanged = 1;
 
 			// Button pressed
 			buttonPressStartTime = cnt_10ms_button;
@@ -1015,7 +990,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 			resetPID(&pid_traction);
 			resetPID(&pid_traction_RWD);
 			resetPID(&pid_traction_DESC);
-			printf("PID RESETTATO! (TASTO)\r\n");
+			//printf("PID RESETTATO! (TASTO)\r\n");
 		}
 
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
