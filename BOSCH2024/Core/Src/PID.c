@@ -45,7 +45,7 @@ float PID_controller(PID* p , float y, float r){
 	u = Pterm + newIterm + Dterm + p->offset;
 
 	// QUESTOCODICE DOVREBBE ROVINARE IL COMPORTAMENTO DEL PID IN PROSISMITA' DELLA SATURAZIONE
-	/*
+/*
 	if(p->offset == 0){
 		// ANTI-WINDUP DEL TERMINE INTEGRALE
 		if(newIterm > p->u_max){
@@ -55,7 +55,7 @@ float PID_controller(PID* p , float y, float r){
 			newIterm = p->u_min;
 		}
 	}
-	 */
+*/
 
 	// saturazione con back-calculation
 	float saturated_u = u;
@@ -73,7 +73,7 @@ float PID_controller(PID* p , float y, float r){
 	u = saturated_u;
 
 	if(p->offset == 0){
-		//printf("%f;%f;%f\r\n", u, p->Iterm, correction);
+		//printf("%f;%f;%f\r\n", e, p->Iterm, correction);
 	}
 
 	return u;

@@ -152,6 +152,7 @@ int msg_len = 0;
 int MAX_VALUES = 3;
 float last_read;
 int cnt_DMA;
+float last_curvature_radius_ref_m;
 
 const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
@@ -303,7 +304,8 @@ int main(void)
 		//-------------------------------------------------------------
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
-			HAL_NVIC_SystemReset();
+			//HAL_NVIC_SystemReset();
+			printf("#############################################\r\n");
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -984,22 +986,27 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 		if(floatArray[0] == 0 || floatArray[0] == 1){
 			dataRX.enable = floatArray[0];
 			dataRX.linear_speed_ref_m_s = floatArray[1];
-			dataRX.curvature_radius_ref_m = floatArray[2];
-		}
 
-		if(floatArray[0] == 3){
-			// Reset dei pid
-			resetPID(&pid_steering);
-			resetPID(&pid_traction);
-			resetPID(&pid_traction_RWD);
-			resetPID(&pid_traction_DESC);
-			//printf("PID RESETTATO! (TASTO)\r\n");
-		}
+			if(dataRX.curvature_radius_ref_m != 0)
+				last_curvature_radius_ref_m = dataRX.curvature_radius_ref_m;
+			if(floatArray[2] == 0)
+				dataRX.curvature_radius_ref_m = last_curvature_radius_ref_m;
+			else
+				dataRX.curvature_radius_ref_m = floatArray[2];
 
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
+			if(floatArray[0] == 3){
+				// Reset dei pid
+				resetPID(&pid_steering);
+				resetPID(&pid_traction);
+				resetPID(&pid_traction_RWD);
+				resetPID(&pid_traction_DESC);
+				//printf("PID RESETTATO! (TASTO)\r\n");
+			}
+
+			HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
+		}
 	}
 }
-
 // COMUNICAZIONE (TRASMISSIONE DATI)
 void TransmitTelemetry(){
 	dataTX.current_speed_rpm = vehicleState.motor_speed_RPM;
@@ -1009,6 +1016,7 @@ void TransmitTelemetry(){
 	bno055_vector_t angle = bno055_getVectorGyroscope();
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
 	bno055_vector_t quat = bno055_getVectorQuaternion();
+	bno055_calibration_state_t cal = bno055_getCalibrationState();
 	dataTX.accel_x = accel.x;
 	dataTX.accel_y = accel.y;
 	dataTX.accel_z = accel.z;
@@ -1023,7 +1031,8 @@ void TransmitTelemetry(){
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
-	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
+	printf("%f;%d;%d\r\n", dataRX.curvature_radius_ref_m, cal.sys, bno055_getSystemStatus());
 }
 
 //-------------------------------------------------------------
