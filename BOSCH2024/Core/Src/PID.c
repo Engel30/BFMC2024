@@ -36,7 +36,7 @@ float PID_controller(PID* p , float y, float r){
 
 
 	float Pterm = p->Kp*e;
-	newIterm = p->Iterm + (p->Ki)*p->Tc*p->e_old;
+	newIterm = p->Iterm + (p->Ki)*p->Tc*e;
 	float Dterm = (p->Kd/p->Tc)*(e - p->e_old);
 
 	p->e_old = e;
@@ -44,6 +44,8 @@ float PID_controller(PID* p , float y, float r){
 
 	u = Pterm + newIterm + Dterm + p->offset;
 
+	// QUESTOCODICE DOVREBBE ROVINARE IL COMPORTAMENTO DEL PID IN PROSISMITA' DELLA SATURAZIONE
+	/*
 	if(p->offset == 0){
 		// ANTI-WINDUP DEL TERMINE INTEGRALE
 		if(newIterm > p->u_max){
@@ -53,33 +55,22 @@ float PID_controller(PID* p , float y, float r){
 			newIterm = p->u_min;
 		}
 	}
+	 */
 
-		// saturazione con back-calculation
-		float saturated_u = u;
+	// saturazione con back-calculation
+	float saturated_u = u;
 
-		if(saturated_u > p->u_max){
-			saturated_u = p->u_max;
-		}
-		else if(saturated_u < p->u_min){
-			saturated_u = p->u_min;
-		}
-
-		float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-		p->Iterm = newIterm + correction;
-
-		u = saturated_u;
-	/*
-	else{
-		if(u > p->u_max){
-			u = p->u_max;
-		}
-		else if(u < p->u_min){
-			u = p->u_min;
-		} else {
-			p->Iterm = newIterm;
-		}
+	if(saturated_u > p->u_max){
+		saturated_u = p->u_max;
 	}
-*/
+	else if(saturated_u < p->u_min){
+		saturated_u = p->u_min;
+	}
+
+	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
+	p->Iterm = newIterm + correction;
+
+	u = saturated_u;
 
 	if(p->offset == 0){
 		//printf("%f;%f;%f\r\n", u, p->Iterm, correction);
@@ -88,5 +79,31 @@ float PID_controller(PID* p , float y, float r){
 	return u;
 }
 
+// Metodo del CALMPING per l'anti-windup
+/*
+float PID_controller(PID* p , float y, float r){
+	float newIterm;
+	float e = r - y;
 
+	float Pterm = p->Kp * e;
+	float Dterm = (p->Kd / p->Tc) * (e - p->e_old);
+	p->e_old = e;
 
+	// Calculate what the new integral term would be if updated
+	newIterm = p->Iterm + p->Ki * e * p->Tc;
+
+	// Calculate preliminary controller output (without updating Iterm yet)
+	float u = Pterm + newIterm + Dterm + p->offset;
+
+	// Check if output is within saturation limits
+	if(u > p->u_max) {
+		u = p->u_max;
+	} else if(u < p->u_min) {
+		u = p->u_min;
+	} else {
+		p->Iterm = newIterm;
+	}
+
+	return u;
+}
+*/
