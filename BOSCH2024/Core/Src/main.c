@@ -241,17 +241,17 @@ int main(void)
 	//PID traction FWD
 	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, 0, 0);
+	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, KD_TRACTION, -1);
 
 	//PID traction RWD
 	init_PID(&pid_traction_RWD, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, 0);
+	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, -1);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, 0);
+	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, -1);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
@@ -290,11 +290,11 @@ int main(void)
 			//Idle
 		case 0:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-			HardwareEnable = 0;
+			HardwareEnable = 1;
 			break;
 		case 1:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
-			HardwareEnable = 1;
+			HardwareEnable = 0;
 			//dataRX.enable = 1;
 			//dataRX.linear_speed_ref_m_s = 0.20;
 			//dataRX.curvature_radius_ref_m = 0.73;
@@ -304,8 +304,8 @@ int main(void)
 		//-------------------------------------------------------------
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
-			//HAL_NVIC_SystemReset();
-			printf("#############################################\r\n");
+			HAL_NVIC_SystemReset();
+			//printf("#############################################\r\n");
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -349,8 +349,9 @@ int main(void)
 				if(0) //x_acceleration < -1.2)
 					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 				else{
-					if(vehicleState.motor_speed_ref_RPM >= 0)
+					if(vehicleState.motor_speed_ref_RPM >= 0){
 						u_trazione = PID_controller(&pid_traction, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+					}
 					else{
 						u_trazione = PID_controller(&pid_traction_RWD, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 						//printf("PID RETRO\r\n");
@@ -1032,7 +1033,7 @@ void TransmitTelemetry(){
 	dataTX.quaternion_w = quat.w;
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
 	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
-	printf("%f;%d;%d\r\n", dataRX.curvature_radius_ref_m, cal.sys, bno055_getSystemStatus());
+	printf("%f;%f\r\n", dataRX.linear_speed_ref_m_s, vehicleState.linear_speed_m_s);
 }
 
 //-------------------------------------------------------------
@@ -1077,9 +1078,9 @@ void ProceduraCalibrazione(){
 
 void resetBNO055(){
 	HAL_GPIO_WritePin(IMU_RESET_GPIO_Port, IMU_RESET_Pin, GPIO_PIN_RESET);
-	HAL_Delay(800);
+	HAL_Delay(500);
 	HAL_GPIO_WritePin(IMU_RESET_GPIO_Port, IMU_RESET_Pin, GPIO_PIN_SET);
-	HAL_Delay(800);
+	HAL_Delay(500);
 }
 
 /* USER CODE END 4 */

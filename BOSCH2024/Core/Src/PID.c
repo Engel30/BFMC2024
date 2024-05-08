@@ -29,48 +29,47 @@ float PID_controller(PID* p , float y, float r){
 
 	e = r-y;
 
-	if (isinf(p->Iterm) || isnan(p->Iterm)) {
-		p->Iterm = 0;
-		p->e_old = 0;
-	}
+	//if(p->Kb != -1){
+		if (isinf(p->Iterm) || isnan(p->Iterm)) {
+			p->Iterm = 0;
+			p->e_old = 0;
+		}
+	//}
 
 
 	float Pterm = p->Kp*e;
-	newIterm = p->Iterm + (p->Ki)*p->Tc*e;
+	newIterm = p->Iterm + (p->Ki)*p->Tc*p->e_old;
 	float Dterm = (p->Kd/p->Tc)*(e - p->e_old);
 
 	p->e_old = e;
 
 
 	u = Pterm + newIterm + Dterm + p->offset;
-
-	// QUESTOCODICE DOVREBBE ROVINARE IL COMPORTAMENTO DEL PID IN PROSISMITA' DELLA SATURAZIONE
 /*
-	if(p->offset == 0){
-		// ANTI-WINDUP DEL TERMINE INTEGRALE
-		if(newIterm > p->u_max){
-			newIterm = p->u_max;
+	if(p->Kb == -1){
+		if(u > p->u_max){
+			u = p->u_max;
+		} else if(u < p->u_min){
+			u = p->u_min;
+		} else {
+			p->Iterm = newIterm;
 		}
-		else if(newIterm < p->u_min){
-			newIterm = p->u_min;
+	} else {*/
+		// saturazione con back-calculation
+		float saturated_u = u;
+
+		if(saturated_u > p->u_max){
+			saturated_u = p->u_max;
 		}
-	}
-*/
+		else if(saturated_u < p->u_min){
+			saturated_u = p->u_min;
+		}
 
-	// saturazione con back-calculation
-	float saturated_u = u;
+		float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
+		p->Iterm = newIterm + correction;
 
-	if(saturated_u > p->u_max){
-		saturated_u = p->u_max;
-	}
-	else if(saturated_u < p->u_min){
-		saturated_u = p->u_min;
-	}
-
-	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-	p->Iterm = newIterm + correction;
-
-	u = saturated_u;
+		u = saturated_u;
+	//}
 
 	if(p->offset == 0){
 		//printf("%f;%f;%f\r\n", e, p->Iterm, correction);
