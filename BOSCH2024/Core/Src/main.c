@@ -113,7 +113,7 @@ serialDataTX dataTX;
 vehicleData vehicleState;
 
 //PID
-PID pid_traction, pid_traction_RWD, pid_traction_DESC, pid_steering;
+PID pid_traction, pid_traction_RWD, pid_traction_ASC, pid_traction_DESC, pid_steering;
 double u_trazione = 0;
 double u_sterzo = 0;
 
@@ -239,19 +239,24 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim11);
 
 	//PID traction FWD
-	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
+	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, 0.5,
 			MIN_U_TRACTION, NEUTRAL_PWM);
 	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, KD_TRACTION, -1);
 
 	//PID traction RWD
 	init_PID(&pid_traction_RWD, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, 0, -1);
+	tune_PID(&pid_traction_RWD, KP_TRACTION_RWD, KI_TRACTION_RWD, KD_TRACTION_RWD, -1);
+
+	//PID traction ASC
+	init_PID(&pid_traction_ASC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
+			MIN_U_TRACTION, NEUTRAL_PWM);
+	tune_PID(&pid_traction_ASC, KP_TRACTION_ASC, KI_TRACTION_ASC, 0, -1);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, 0, -1);
+	tune_PID(&pid_traction_DESC, KP_TRACTION_DESC, KI_TRACTION_DESC, KD_TRACTION_DESC, -1);
 
 	//PID steering
 	init_PID(&pid_steering, STEERING_SAMPLING_TIME, MAX_U_STEERING,
@@ -305,7 +310,6 @@ int main(void)
 		//Controllo
 		if(bno055_getSystemStatus() != 5)
 			HAL_NVIC_SystemReset();
-			//printf("#############################################\r\n");
 
 		if (HardwareEnable == 1 && dataRX.enable == 1) {
 			if (Flag_10ms == 1) {
@@ -340,21 +344,36 @@ int main(void)
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
 
+				/* CODICE CHE NON SERVE PIU'
 				//Verifica l'inclinazine della macchina per la rampa
 				bno055_vector_t u = bno055_getVectorGravity();
 				x_acceleration = u.x;
-				//printf("%f;%f\r\n", x_acceleration, 0);
+				//printf("%f\r\n", x_acceleration);
+				*/
+
+				bno055_vector_t p = bno055_getVectorEuler();
+				float pitch = p.y;
+				//printf("%f\r\n", pitch);
 
 				//Decido quale PID usare in base al verso del moto
-				if(0) //x_acceleration < -1.2)
+				if(0) //pitch < -3){
+				{
 					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-				else{
+					//printf("DESC\r\n");
+				}
+				else if (0) // pitch > 1)
+				{
+					u_trazione = PID_controller(&pid_traction_ASC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+					//printf("ASC\r\n");
+				}
+				else {
 					if(vehicleState.motor_speed_ref_RPM >= 0){
 						u_trazione = PID_controller(&pid_traction, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+						//printf("FWD\r\n");
 					}
 					else{
 						u_trazione = PID_controller(&pid_traction_RWD, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-						//printf("PID RETRO\r\n");
+						//printf("RWD\r\n");
 					}
 				}
 
@@ -364,6 +383,7 @@ int main(void)
 				else
 					BL_set_PWM(u_trazione);
 
+				//printf("%f;%f\r\n", u_trazione, vehicleState.linear_speed_m_s);
 				//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
 
 				//-------------------------------------------------------------
@@ -407,6 +427,7 @@ int main(void)
 						u_sterzo *= -1.0;
 
 					servo_motor(u_sterzo);
+					//servo_motor(0);
 				}
 				dataTX.current_servo_angle_deg = u_sterzo;
 			}
@@ -1032,8 +1053,8 @@ void TransmitTelemetry(){
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
-	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
-	printf("%f;%f\r\n", dataRX.linear_speed_ref_m_s, vehicleState.linear_speed_m_s);
+	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
+	//printf("%f;%f\r\n", dataRX.linear_speed_ref_m_s, vehicleState.linear_speed_m_s);
 }
 
 //-------------------------------------------------------------

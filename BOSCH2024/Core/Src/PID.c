@@ -29,12 +29,10 @@ float PID_controller(PID* p , float y, float r){
 
 	e = r-y;
 
-	//if(p->Kb != -1){
-		if (isinf(p->Iterm) || isnan(p->Iterm)) {
-			p->Iterm = 0;
-			p->e_old = 0;
-		}
-	//}
+	if (isinf(p->Iterm) || isnan(p->Iterm)) {
+		p->Iterm = 0;
+		p->e_old = 0;
+	}
 
 
 	float Pterm = p->Kp*e;
@@ -45,31 +43,21 @@ float PID_controller(PID* p , float y, float r){
 
 
 	u = Pterm + newIterm + Dterm + p->offset;
-/*
-	if(p->Kb == -1){
-		if(u > p->u_max){
-			u = p->u_max;
-		} else if(u < p->u_min){
-			u = p->u_min;
-		} else {
-			p->Iterm = newIterm;
-		}
-	} else {*/
-		// saturazione con back-calculation
-		float saturated_u = u;
 
-		if(saturated_u > p->u_max){
-			saturated_u = p->u_max;
-		}
-		else if(saturated_u < p->u_min){
-			saturated_u = p->u_min;
-		}
+	// saturazione con back-calculation
+	float saturated_u = u;
 
-		float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
-		p->Iterm = newIterm + correction;
+	if(saturated_u > p->u_max){
+		saturated_u = p->u_max;
+	}
+	else if(saturated_u < p->u_min){
+		saturated_u = p->u_min;
+	}
 
-		u = saturated_u;
-	//}
+	float correction = p->Kb * (saturated_u - u) * p->Ki * p->Tc;
+	p->Iterm = newIterm + correction;
+
+	u = saturated_u;
 
 	if(p->offset == 0){
 		//printf("%f;%f;%f\r\n", e, p->Iterm, correction);
@@ -105,4 +93,4 @@ float PID_controller(PID* p , float y, float r){
 
 	return u;
 }
-*/
+ */
