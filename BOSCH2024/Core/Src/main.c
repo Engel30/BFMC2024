@@ -134,9 +134,6 @@ int counter_cal_ESC = 0;
 float duty;
 int flag_cal = 0;
 
-//Inclinazione per il PID in discesa
-float x_acceleration = 0;
-
 //Filtro per la velocità
 #define MAX_RPM_VALUES 10
 float tempRPM = 0;
@@ -239,7 +236,7 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim11);
 
 	//PID traction FWD
-	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, 0.5,
+	init_PID(&pid_traction, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
 	tune_PID(&pid_traction, KP_TRACTION, KI_TRACTION, KD_TRACTION, -1);
 
@@ -251,7 +248,7 @@ int main(void)
 	//PID traction ASC
 	init_PID(&pid_traction_ASC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
 			MIN_U_TRACTION, NEUTRAL_PWM);
-	tune_PID(&pid_traction_ASC, KP_TRACTION_ASC, KI_TRACTION_ASC, 0, -1);
+	tune_PID(&pid_traction_ASC, KP_TRACTION_ASC, KI_TRACTION_ASC, KD_TRACTION_ASC, -1);
 
 	//PID traction DESC
 	init_PID(&pid_traction_DESC, TRACTION_SAMPLING_TIME, MAX_U_TRACTION,
@@ -292,7 +289,6 @@ int main(void)
 			//if(dataRX.enable == 0)
 				ProceduraCalibrazione();
 			break;
-			//Idle
 		case 0:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 			HardwareEnable = 1;
@@ -328,6 +324,7 @@ int main(void)
 				tempRPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
 
 				//Filtraggio della velocità
+				//-------------------------------------------
 				ArrayRPM[PtrRPM] = tempRPM;
 				MeanRPM = 0;
 				for(int i = 0; i < MAX_RPM_VALUES; i++){
@@ -340,6 +337,7 @@ int main(void)
 				else
 					PtrRPM++;
 				vehicleState.motor_speed_RPM = MeanRPM;
+				//-------------------------------------------
 
 				//Speed reference for motor
 				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
@@ -347,7 +345,7 @@ int main(void)
 				/* CODICE CHE NON SERVE PIU'
 				//Verifica l'inclinazine della macchina per la rampa
 				bno055_vector_t u = bno055_getVectorGravity();
-				x_acceleration = u.x;
+				float x_acceleration = u.x;
 				//printf("%f\r\n", x_acceleration);
 				*/
 
@@ -355,7 +353,8 @@ int main(void)
 				float pitch = p.y;
 				//printf("%f\r\n", pitch);
 
-				//Decido quale PID usare in base al verso del moto
+				// Decido quale PID usare in base al verso del moto
+				//-------------------------------------------
 				if(0) //pitch < -3){
 				{
 					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
@@ -376,6 +375,7 @@ int main(void)
 						//printf("RWD\r\n");
 					}
 				}
+				//-------------------------------------------
 
 				//Assegno il duty al motore
 				if (vehicleState.motor_speed_ref_RPM == 0)
@@ -396,6 +396,8 @@ int main(void)
 				vehicleState.yaw_rate_rad_sec = (vehicleState.yaw_rate_deg_sec * M_PI) / 180;
 				last_read = dataRX.curvature_radius_ref_m;
 
+				// Decido quale PID usare in base al raggio di curvatura
+				//-------------------------------------------
 				if (dataRX.curvature_radius_ref_m >= MAX_CURVATURE_RADIUS_FOR_STRAIGHT) {
 
 					vehicleState.yaw_rate_ref_rad_sec = 0;
@@ -429,12 +431,13 @@ int main(void)
 					servo_motor(u_sterzo);
 					//servo_motor(0);
 				}
+				//-------------------------------------------
+
 				dataTX.current_servo_angle_deg = u_sterzo;
 			}
 		} else {
 			if(flag_button != -1){
 				BL_set_PWM(NEUTRAL_PWM);
-				//BL_set_PWM(MIN_PWM+0.04);
 				servo_motor(0);
 
 				// Reset dei pid
@@ -442,7 +445,6 @@ int main(void)
 				resetPID(&pid_traction);
 				resetPID(&pid_traction_RWD);
 				resetPID(&pid_traction_DESC);
-				//printf("PID RESETTATO! (FERMA)\r\n");
 			}
 		}
 
@@ -969,8 +971,7 @@ int __io_putchar(int ch) {
 //BLUE user button
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
-		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) {
-
+		if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) || (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_2) == GPIO_PIN_RESET)) {
 			// Button pressed
 			buttonPressStartTime = cnt_10ms_button;
 
@@ -979,17 +980,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 			//Verifico quanto tempo ho tenuto premuto il tasto
 			pressDuration = buttonPressEndTime - buttonPressStartTime;
-			if (pressDuration < SHORT_PRESS_THRESHOLD)
-			{
+			if (pressDuration < SHORT_PRESS_THRESHOLD){
 				if(flag_button >= 0 && flag_button < max_flag_button){
 					flag_button++;
 				}
-				else
-				{
+				else{
 					flag_button = 0;
 				}
-			} else if (pressDuration >= LONG_PRESS_THRESHOLD)
-			{
+			} else if (pressDuration >= LONG_PRESS_THRESHOLD){
 				flag_button = -1;
 				counter_cal_ESC = 0;
 			}
@@ -1022,7 +1020,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 				resetPID(&pid_traction);
 				resetPID(&pid_traction_RWD);
 				resetPID(&pid_traction_DESC);
-				//printf("PID RESETTATO! (TASTO)\r\n");
 			}
 
 			HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
