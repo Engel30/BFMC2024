@@ -150,6 +150,14 @@ int MAX_VALUES = 3;
 float last_read;
 int cnt_DMA;
 float last_curvature_radius_ref_m;
+double collectedData[10][10];
+//double averagedData[NUM_DATA_TO_AVERAGE];
+double averagedData[10];
+int pointer = 0;
+const int FREQUENCY_STM=100,FREQUENCY_SENSOR_FUSION=10;
+const int NUM_DATA_TO_AVERAGE=10;
+// FREQUENCY_STM/FREQUENCY_SENSOR_FUSION
+const int NUM_OF_SAMPLE_TO_AVERAGE = 10;
 
 const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
@@ -397,7 +405,6 @@ int main(void)
 				last_read = dataRX.curvature_radius_ref_m;
 
 				// Decido quale PID usare in base al raggio di curvatura
-				//-------------------------------------------
 				if (dataRX.curvature_radius_ref_m >= MAX_CURVATURE_RADIUS_FOR_STRAIGHT) {
 
 					vehicleState.yaw_rate_ref_rad_sec = 0;
@@ -431,8 +438,6 @@ int main(void)
 					servo_motor(u_sterzo);
 					//servo_motor(0);
 				}
-				//-------------------------------------------
-
 				dataTX.current_servo_angle_deg = u_sterzo;
 			}
 		} else {
@@ -970,8 +975,8 @@ int __io_putchar(int ch) {
 //-------------------------------------------------------------
 //BLUE user button
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if (GPIO_Pin == GPIO_PIN_13 ||GPIO_Pin == GPIO_PIN_2) {
-		if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET) || (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_2) == GPIO_PIN_RESET)) {
+	if (GPIO_Pin == GPIO_PIN_13){// || GPIO_Pin == GPIO_PIN_2) {
+		if ((HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)){// || (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_2) == GPIO_PIN_RESET)) {
 			// Button pressed
 			buttonPressStartTime = cnt_10ms_button;
 
@@ -1036,6 +1041,7 @@ void TransmitTelemetry(){
 	bno055_vector_t magne = bno055_getVectorMagnetometer();
 	bno055_vector_t quat = bno055_getVectorQuaternion();
 	bno055_calibration_state_t cal = bno055_getCalibrationState();
+	/*
 	dataTX.accel_x = accel.x;
 	dataTX.accel_y = accel.y;
 	dataTX.accel_z = accel.z;
@@ -1049,8 +1055,41 @@ void TransmitTelemetry(){
 	dataTX.quaternion_y = quat.y;
 	dataTX.quaternion_z = quat.z;
 	dataTX.quaternion_w = quat.w;
+	 */
+
+	collectedData[0][pointer]=accel.x;
+	collectedData[1][pointer]=accel.y;
+	collectedData[2][pointer]=accel.z;
+	collectedData[3][pointer]=cal.mag;
+	collectedData[4][pointer]=angle.y;
+	collectedData[5][pointer]=angle.z;
+	collectedData[6][pointer]=magne.x;
+	collectedData[7][pointer]=magne.y;
+	collectedData[8][pointer]=magne.z;
+	collectedData[9][pointer]=tempRPM * RPM_2_m_s;
+	pointer++;
+	if (pointer==NUM_OF_SAMPLE_TO_AVERAGE){
+		pointer=0;
+		for(int j=0;j<NUM_DATA_TO_AVERAGE;j++){
+			double sum = 0.0;
+			for(int i=0;i<NUM_OF_SAMPLE_TO_AVERAGE;i++){
+				sum+=collectedData[j][i];
+				//collectedData[j][i]=0;
+			}
+			averagedData[j]=sum/NUM_OF_SAMPLE_TO_AVERAGE;
+		}
+		printf("%+2.4f, %+2.4f, %+2.4f,"
+				" %+2.4f, %+2.4f, %+2.4f,"
+				" %+2.4f, %+2.4f, %+2.4f,"
+				" %+2.4f\r\n",
+				averagedData[0],averagedData[1],averagedData[2],
+				averagedData[3],averagedData[4],averagedData[5],
+				averagedData[6],averagedData[7],averagedData[8],
+				averagedData[9]);
+	}
+
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
-	printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
+	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
 	//printf("%f;%f\r\n", dataRX.linear_speed_ref_m_s, vehicleState.linear_speed_m_s);
 }
 
