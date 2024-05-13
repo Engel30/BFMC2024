@@ -305,8 +305,8 @@ int main(void)
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 			HardwareEnable = 0;
 			//dataRX.enable = 1;
-			//dataRX.linear_speed_ref_m_s = 0.20;
-			//dataRX.curvature_radius_ref_m = 0.73;
+			//dataRX.linear_speed_ref_m_s = 0.50;
+			//dataRX.curvature_radius_ref_m = 100;
 			break;
 		}
 
@@ -363,14 +363,14 @@ int main(void)
 
 				// Decido quale PID usare in base al verso del moto
 				//-------------------------------------------
-				if(0) //pitch < -3){
+				if(pitch < -3)
 				{
-					u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+					//u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 					//printf("DESC\r\n");
 				}
-				else if (0) // pitch > 1)
+				else if (pitch > 1)
 				{
-					u_trazione = PID_controller(&pid_traction_ASC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+					//u_trazione = PID_controller(&pid_traction_ASC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
 					//printf("ASC\r\n");
 				}
 				else {
