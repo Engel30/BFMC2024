@@ -150,14 +150,14 @@ int MAX_VALUES = 3;
 float last_read;
 int cnt_DMA;
 float last_curvature_radius_ref_m;
-double collectedData[10][10];
+double collectedData[10][20];
 //double averagedData[NUM_DATA_TO_AVERAGE];
 double averagedData[10];
 int pointer = 0;
 const int FREQUENCY_STM=100,FREQUENCY_SENSOR_FUSION=10;
 const int NUM_DATA_TO_AVERAGE=10;
 // FREQUENCY_STM/FREQUENCY_SENSOR_FUSION
-const int NUM_OF_SAMPLE_TO_AVERAGE = 10;
+const int NUM_OF_SAMPLE_TO_AVERAGE = 20;
 
 const float RPM_2_m_s = (2 * M_PI / 60) * WHEEL_RADIUS / MOTOR_REVOLUTION_FOR_ONE_WHEEL_REVOLUTION / GEARBOX_REDUCTION_RATIO;
 
@@ -319,126 +319,137 @@ int main(void)
 			if (Flag_10ms == 1) {
 				Flag_10ms = 0;
 
-				//-------------------------------------------------------------
+				if(dataRX.linear_speed_ref_m_s != 0){
 
-				//TRACTION control
+					//-------------------------------------------------------------
 
-				//Measure speed with encoder
-				vehicleState.ref_count = TIM2->ARR / 2;
-				vehicleState.delta_count = vehicleState.counts - vehicleState.ref_count;
+					//TRACTION control
 
-				vehicleState.delta_angle_deg = (vehicleState.delta_count * 360) / ((double) (ENCODER_PPR * ENCODER_COUNTING_MODE * GEARBOX_RATIO));
-				vehicleState.motor_speed_deg_sec = vehicleState.delta_angle_deg / ENCODER_SAMPLING_TIME;
-				tempRPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
+					//Measure speed with encoder
+					vehicleState.ref_count = TIM2->ARR / 2;
+					vehicleState.delta_count = vehicleState.counts - vehicleState.ref_count;
 
-				//Filtraggio della velocità
-				//-------------------------------------------
-				ArrayRPM[PtrRPM] = tempRPM;
-				MeanRPM = 0;
-				for(int i = 0; i < MAX_RPM_VALUES; i++){
-					MeanRPM += ArrayRPM[i];
-				}
-				MeanRPM /= MAX_RPM_VALUES;
+					vehicleState.delta_angle_deg = (vehicleState.delta_count * 360) / ((double) (ENCODER_PPR * ENCODER_COUNTING_MODE * GEARBOX_RATIO));
+					vehicleState.motor_speed_deg_sec = vehicleState.delta_angle_deg / ENCODER_SAMPLING_TIME;
+					tempRPM = BL_DegreeSec2RPM(vehicleState.motor_speed_deg_sec);
 
-				if(PtrRPM == MAX_RPM_VALUES-1)
-					PtrRPM = 0;
-				else
-					PtrRPM++;
-				vehicleState.motor_speed_RPM = MeanRPM;
-				//-------------------------------------------
+					//Filtraggio della velocità
+					//-------------------------------------------
+					ArrayRPM[PtrRPM] = tempRPM;
+					MeanRPM = 0;
+					for(int i = 0; i < MAX_RPM_VALUES; i++){
+						MeanRPM += ArrayRPM[i];
+					}
+					MeanRPM /= MAX_RPM_VALUES;
 
-				//Speed reference for motor
-				vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
+					if(PtrRPM == MAX_RPM_VALUES-1)
+						PtrRPM = 0;
+					else
+						PtrRPM++;
+					vehicleState.motor_speed_RPM = MeanRPM;
+					//-------------------------------------------
 
-				/* CODICE CHE NON SERVE PIU'
+					//Speed reference for motor
+					vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
+
+					/* CODICE CHE NON SERVE PIU'
 				//Verifica l'inclinazine della macchina per la rampa
 				bno055_vector_t u = bno055_getVectorGravity();
 				float x_acceleration = u.x;
 				//printf("%f\r\n", x_acceleration);
-				*/
+					 */
 
-				bno055_vector_t p = bno055_getVectorEuler();
-				float pitch = p.y;
-				//printf("%f\r\n", pitch);
+					bno055_vector_t p = bno055_getVectorEuler();
+					float pitch = p.y;
+					//printf("%f\r\n", pitch);
 
-				// Decido quale PID usare in base al verso del moto
-				//-------------------------------------------
-				if(pitch < -3)
-				{
-					//u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-					//printf("DESC\r\n");
-				}
-				else if (pitch > 1)
-				{
-					//u_trazione = PID_controller(&pid_traction_ASC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-					//printf("ASC\r\n");
-				}
-				else {
-					if(vehicleState.motor_speed_ref_RPM >= 0){
-						u_trazione = PID_controller(&pid_traction, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-						//printf("FWD\r\n");
+					// Decido quale PID usare in base al verso del moto
+					//-------------------------------------------
+					if(pitch < -3)
+					{
+						//u_trazione = PID_controller(&pid_traction_DESC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+						//printf("DESC\r\n");
 					}
-					else{
-						u_trazione = PID_controller(&pid_traction_RWD, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
-						//printf("RWD\r\n");
+					else if (pitch > 1)
+					{
+						//u_trazione = PID_controller(&pid_traction_ASC, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+						//printf("ASC\r\n");
 					}
-				}
-				//-------------------------------------------
+					else {
+						if(vehicleState.motor_speed_ref_RPM >= 0){
+							u_trazione = PID_controller(&pid_traction, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+							//printf("FWD\r\n");
+						}
+						else{
+							u_trazione = PID_controller(&pid_traction_RWD, vehicleState.motor_speed_RPM, vehicleState.motor_speed_ref_RPM);
+							//printf("RWD\r\n");
+						}
+					}
+					//-------------------------------------------
 
-				//Assegno il duty al motore
-				if (vehicleState.motor_speed_ref_RPM == 0)
-					BL_set_PWM(NEUTRAL_PWM);
-				else
-					BL_set_PWM(u_trazione);
-
-				//printf("%f;%f\r\n", u_trazione, vehicleState.linear_speed_m_s);
-				//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
-
-				//-------------------------------------------------------------
-
-				//STEERING control
-
-				//Get yawrate from IMU
-				bno055_vector_t v = bno055_getVectorGyroscope();
-				vehicleState.yaw_rate_deg_sec = v.z;
-				vehicleState.yaw_rate_rad_sec = (vehicleState.yaw_rate_deg_sec * M_PI) / 180;
-				last_read = dataRX.curvature_radius_ref_m;
-
-				// Decido quale PID usare in base al raggio di curvatura
-				if (dataRX.curvature_radius_ref_m >= MAX_CURVATURE_RADIUS_FOR_STRAIGHT) {
-
-					vehicleState.yaw_rate_ref_rad_sec = 0;
-
-					u_sterzo = PID_controller(&pid_steering, vehicleState.yaw_rate_rad_sec, vehicleState.yaw_rate_ref_rad_sec);
-
-					servo_motor(-u_sterzo); //Minus because yawrate and steering are opposite
-				} else {
-
-					vehicleState.linear_speed_m_s = vehicleState.motor_speed_RPM * RPM_2_m_s;
-					if (dataRX.curvature_radius_ref_m == 0)
-						vehicleState.yaw_rate_ref_rad_sec = 0;
+					//Assegno il duty al motore
+					if (vehicleState.motor_speed_ref_RPM == 0)
+						BL_set_PWM(NEUTRAL_PWM);
 					else
-						vehicleState.yaw_rate_ref_rad_sec = vehicleState.linear_speed_m_s / dataRX.curvature_radius_ref_m;
+						BL_set_PWM(u_trazione);
 
-					float yaw_rate_ref_rad_sec_abs = vehicleState.yaw_rate_ref_rad_sec;
-					float yaw_rate_rad_sec_abs = vehicleState.yaw_rate_rad_sec;
-					if (vehicleState.yaw_rate_ref_rad_sec < 0)
-						yaw_rate_ref_rad_sec_abs = -vehicleState.yaw_rate_ref_rad_sec;
-					if (vehicleState.yaw_rate_rad_sec < 0)
-						yaw_rate_rad_sec_abs = -vehicleState.yaw_rate_rad_sec;
+					//printf("%f;%f\r\n", u_trazione, vehicleState.linear_speed_m_s);
+					//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
 
-					u_sterzo = PID_controller(&pid_steering, yaw_rate_rad_sec_abs, yaw_rate_ref_rad_sec_abs);
+					//-------------------------------------------------------------
 
-					//Minus because yawrate and steering are opposite
-					if (dataRX.curvature_radius_ref_m >= 0 && u_sterzo > 0)
-						u_sterzo *= -1.0;
-					if (dataRX.curvature_radius_ref_m < 0 && u_sterzo < 0)
-						u_sterzo *= -1.0;
+					//STEERING control
 
-					servo_motor(u_sterzo);
-					//servo_motor(0);
+					//Get yawrate from IMU
+					bno055_vector_t v = bno055_getVectorGyroscope();
+					vehicleState.yaw_rate_deg_sec = v.z;
+					vehicleState.yaw_rate_rad_sec = (vehicleState.yaw_rate_deg_sec * M_PI) / 180;
+					last_read = dataRX.curvature_radius_ref_m;
+
+					// Decido quale PID usare in base al raggio di curvatura
+					if (dataRX.curvature_radius_ref_m >= MAX_CURVATURE_RADIUS_FOR_STRAIGHT) {
+
+						vehicleState.yaw_rate_ref_rad_sec = 0;
+
+						u_sterzo = PID_controller(&pid_steering, vehicleState.yaw_rate_rad_sec, vehicleState.yaw_rate_ref_rad_sec);
+
+						servo_motor(-u_sterzo); //Minus because yawrate and steering are opposite
+					} else {
+
+						vehicleState.linear_speed_m_s = vehicleState.motor_speed_RPM * RPM_2_m_s;
+						if (dataRX.curvature_radius_ref_m == 0)
+							vehicleState.yaw_rate_ref_rad_sec = 0;
+						else
+							vehicleState.yaw_rate_ref_rad_sec = vehicleState.linear_speed_m_s / dataRX.curvature_radius_ref_m;
+
+						float yaw_rate_ref_rad_sec_abs = vehicleState.yaw_rate_ref_rad_sec;
+						float yaw_rate_rad_sec_abs = vehicleState.yaw_rate_rad_sec;
+						if (vehicleState.yaw_rate_ref_rad_sec < 0)
+							yaw_rate_ref_rad_sec_abs = -vehicleState.yaw_rate_ref_rad_sec;
+						if (vehicleState.yaw_rate_rad_sec < 0)
+							yaw_rate_rad_sec_abs = -vehicleState.yaw_rate_rad_sec;
+
+						u_sterzo = PID_controller(&pid_steering, yaw_rate_rad_sec_abs, yaw_rate_ref_rad_sec_abs);
+
+						//Minus because yawrate and steering are opposite
+						if (dataRX.curvature_radius_ref_m >= 0 && u_sterzo > 0)
+							u_sterzo *= -1.0;
+						if (dataRX.curvature_radius_ref_m < 0 && u_sterzo < 0)
+							u_sterzo *= -1.0;
+
+						servo_motor(u_sterzo);
+						//servo_motor(0);
+					}
+					dataTX.current_servo_angle_deg = u_sterzo;
+				} else {
+					BL_set_PWM(NEUTRAL_PWM);
+					servo_motor(0);
+
+					resetPID(&pid_steering);
+					resetPID(&pid_traction);
+					resetPID(&pid_traction_RWD);
+					resetPID(&pid_traction_DESC);
 				}
-				dataTX.current_servo_angle_deg = u_sterzo;
 			}
 		} else {
 			if(flag_button != -1){
@@ -1078,6 +1089,7 @@ void TransmitTelemetry(){
 			}
 			averagedData[j]=sum/NUM_OF_SAMPLE_TO_AVERAGE;
 		}
+
 		printf("%+2.4f, %+2.4f, %+2.4f,"
 				" %+2.4f, %+2.4f, %+2.4f,"
 				" %+2.4f, %+2.4f, %+2.4f,"
@@ -1086,8 +1098,8 @@ void TransmitTelemetry(){
 				averagedData[3],averagedData[4],averagedData[5],
 				averagedData[6],averagedData[7],averagedData[8],
 				averagedData[9]);
-	}
 
+	}
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
 	//printf("%+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f, %+2.4f\r\n", accel.x, accel.y, accel.z, angle.x, angle.y, angle.z, magne.x, magne.y, magne.z, tempRPM * RPM_2_m_s);
 	//printf("%f;%f\r\n", dataRX.linear_speed_ref_m_s, vehicleState.linear_speed_m_s);
