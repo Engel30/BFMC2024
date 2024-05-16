@@ -295,7 +295,7 @@ int main(void)
 		//Calibrazione
 		case -1:
 			//if(dataRX.enable == 0)
-				ProceduraCalibrazione();
+			ProceduraCalibrazione();
 			break;
 		case 0:
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
@@ -441,7 +441,8 @@ int main(void)
 						//servo_motor(0);
 					}
 					dataTX.current_servo_angle_deg = u_sterzo;
-				} else {
+				}
+				else {
 					BL_set_PWM(NEUTRAL_PWM);
 					servo_motor(0);
 
@@ -953,13 +954,10 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
 		Flag_10ms = 1;
-
-		if (dataRX.curvature_radius_ref_m == last_read){
-			cnt_DMA++;
-			if(cnt_DMA >= 5){
-				HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
-				cnt_DMA = 0;
-			}
+		cnt_DMA++;
+		if(cnt_DMA >= 100){
+			HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
+			cnt_DMA = 0;
 		}
 
 		//Encoder
@@ -1015,6 +1013,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 // COMUNICAZIONE (RICEZIONE DATI)
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
 	if (huart->Instance == USART6){
+		cnt_DMA = 0;
 		memcpy(msg, RxBuf, Size);
 		float floatArray[MAX_VALUES];
 		parseCSV(msg, floatArray);
@@ -1098,6 +1097,7 @@ void TransmitTelemetry(){
 				averagedData[3],averagedData[4],averagedData[5],
 				averagedData[6],averagedData[7],averagedData[8],
 				averagedData[9]);
+
 
 	}
 	//printf("%2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f, %2.4f\r\n", dataTX.accel_x, dataTX.accel_y, dataTX.accel_z, dataTX.angle_x, dataTX.angle_y, dataTX.angle_z, dataTX.quaternion_x, dataTX.quaternion_y, dataTX.quaternion_z, dataTX.quaternion_w);
