@@ -955,7 +955,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim11) {
 		Flag_10ms = 1;
 		cnt_DMA++;
-		if(cnt_DMA >= 100){
+		if(cnt_DMA >= 10){
 			HAL_UARTEx_ReceiveToIdle_DMA(&huart6, RxBuf, RxBuf_SIZE);
 			cnt_DMA = 0;
 		}
