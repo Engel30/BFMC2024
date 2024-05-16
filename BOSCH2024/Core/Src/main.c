@@ -305,7 +305,7 @@ int main(void)
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 			HardwareEnable = 0;
 			//dataRX.enable = 1;
-			//dataRX.linear_speed_ref_m_s = 0.50;
+			//dataRX.linear_speed_ref_m_s = 0.20;
 			//dataRX.curvature_radius_ref_m = 100;
 			break;
 		}
@@ -352,13 +352,6 @@ int main(void)
 					//Speed reference for motor
 					vehicleState.motor_speed_ref_RPM = dataRX.linear_speed_ref_m_s / RPM_2_m_s;
 
-					/* CODICE CHE NON SERVE PIU'
-				//Verifica l'inclinazine della macchina per la rampa
-				bno055_vector_t u = bno055_getVectorGravity();
-				float x_acceleration = u.x;
-				//printf("%f\r\n", x_acceleration);
-					 */
-
 					bno055_vector_t p = bno055_getVectorEuler();
 					float pitch = p.y;
 					//printf("%f\r\n", pitch);
@@ -393,8 +386,7 @@ int main(void)
 					else
 						BL_set_PWM(u_trazione);
 
-					//printf("%f;%f\r\n", u_trazione, vehicleState.linear_speed_m_s);
-					//printf("%f;%f\r\n", vehicleState.motor_speed_RPM, u_trazione);
+					//printf("%f;%f\r\n", vehicleState.motor_speed_RPM * RPM_2_m_s, dataRX.linear_speed_ref_m_s);
 
 					//-------------------------------------------------------------
 
@@ -464,7 +456,6 @@ int main(void)
 				resetPID(&pid_traction_DESC);
 			}
 		}
-
 		TransmitTelemetry();
 
 	}
