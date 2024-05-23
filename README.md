@@ -26,8 +26,8 @@ Il codice é stato sviluppato unicamente per il microcontrollore STM32F401RE ([l
 
 Una volta installato l'IDE é necessario importare il progetto nel proprio workspace e per fare ció é necessario seguire la procedura di import fornita dall'IDE (File -> Import -> General -> Existing Projects into Workspace) e selezionare le cartelle contenenti i progetti specificandone i percorsi del proprio file system su cui sono stati clonati.
 
-Una volta importati i progetti di interesse é necessario navigare verso il main mediante il percorso <<Progetto>> -> Core -> Src -> main.c . 
-Una volta aperto il main.c é necessario collegare la board STM al computer mediante un cavo micro usb type B. 
+Una volta importati i progetti di interesse é necessario navigare verso il main mediante il percorso "Progetto" -> Core -> Src -> main.c . 
+Una volta aperto il main.c é necessario collegare la board STM al computer mediante un cavo mini usb type B. 
 
 A seguito della connessione tra i due dispositivi si dovrebbe aprire in automatico una cartella (indice del fatto che é stata stabilita con successo la connessione) e dovrebbe accendersi un LED rosso vicino alla porta USB della scheda. 
 
