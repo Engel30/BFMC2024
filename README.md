@@ -20,7 +20,7 @@ Di seguito sono riportate le connessioni tra la scheda STM32F401RE e l'hardware 
 
 ## Istruzioni per l'uso del codice
 
-Il codice é stato sviluppato unicamente per il microcontrollore STM32F401RE ([link alla pagina del produttore] (https://www.st.com/en/evaluation-tools/nucleo-f401re.html)) pertanto é compatibile solo con esso. Il codice é stato sviluppato interamente sulla piattaforma STM32CubeIDE ([link per la guida di installazione](https://www.st.com/resource/en/user_manual/um2563-stm32cubeide-installation-guide-stmicroelectronics.pdf)), aggiornato alla versione 1.13.2 . 
+Il codice é stato sviluppato unicamente per il microcontrollore STM32F401RE ([link alla pagina del produttore](https://www.st.com/en/evaluation-tools/nucleo-f401re.html)) pertanto é compatibile solo con esso. Il codice é stato sviluppato interamente sulla piattaforma STM32CubeIDE ([link per la guida di installazione](https://www.st.com/resource/en/user_manual/um2563-stm32cubeide-installation-guide-stmicroelectronics.pdf)), aggiornato alla versione 1.13.2 . 
 
 > NOTA: Il funzionamento del codice dovrebbe essere indipendente dalla versione dell'IDE. iIn caso di problemi di compatibilitá riferirsi alla versione utilizzata durante il periodo di sviluppo
 
